@@ -250,8 +250,6 @@ const showAnswersSwitchContainer = document.createElement('div');
 showAnswersSwitchContainer.className = 'switch-container';
 const showAnswersSwitch = document.createElement('label');
 showAnswersSwitch.className = 'switch';
-showAnswersSwitchContainer.appendChild(showAnswersSwitch);
-showAnswersSwitch.appendChild(showAnswersSlider);
 // Correct order for show answers switch:
 const showAnswersSwitchContainer = document.createElement('div');
 showAnswersSwitchContainer.className = 'switch-container';
