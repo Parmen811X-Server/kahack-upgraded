@@ -245,12 +245,11 @@ autoAnswerSwitch.appendChild(autoAnswerInput);
 const autoAnswerSlider = document.createElement('span');
 autoAnswerSlider.className = 'slider';
 autoAnswerSwitch.appendChild(autoAnswerSlider);
+// Remove these duplicate lines:
+// const showAnswersSwitchContainer = document.createElement('div');
+// showAnswersSwitchContainer.className = 'switch-container';
 
-const showAnswersSwitchContainer = document.createElement('div');
-showAnswersSwitchContainer.className = 'switch-container';
-const showAnswersSwitch = document.createElement('label');
-showAnswersSwitch.className = 'switch';
-// Correct order for show answers switch:
+// Keep only this one (around line 250):
 const showAnswersSwitchContainer = document.createElement('div');
 showAnswersSwitchContainer.className = 'switch-container';
 showAnswersSwitchContainer.style.display = 'flex';
@@ -258,14 +257,12 @@ showAnswersSwitchContainer.style.alignItems = 'center';
 showAnswersSwitchContainer.style.justifyContent = 'center';
 uiElement.appendChild(showAnswersSwitchContainer);
 
-const showAnswersLabel = document.createElement('span');
-showAnswersLabel.textContent = 'Show Answers';
-// ... other label styling ...
-
+// Similarly for showAnswersSwitch - remove the duplicate declaration
 const showAnswersSwitch = document.createElement('label');
 showAnswersSwitch.className = 'switch';
 showAnswersSwitchContainer.appendChild(showAnswersSwitch);
 
+// Then proceed with the rest of your code...
 // NOW it's safe to append the slider
 showAnswersSwitch.appendChild(showAnswersSlider);  // This was in the wrong place
 
