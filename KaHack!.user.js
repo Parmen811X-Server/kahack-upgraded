@@ -23,7 +23,7 @@ var info = {
 var PPT = 950;
 var Answered_PPT = 950;
 var autoAnswer = false;
-var showAnswers = false;
+var showAnswers = true;
 var inputLag = 100;
 
 function FindByAttributeValue(attribute, value, element_type)    {
