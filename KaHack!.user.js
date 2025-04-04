@@ -25,7 +25,7 @@ var Answered_PPT = 950;
 var autoAnswer = false;
 var showAnswers = true;
 var inputLag = 400;
-
+var forceCorrectMode = false; // Controls stealth correction
 function FindByAttributeValue(attribute, value, element_type)    {
   element_type = element_type || "*";
   var All = document.getElementsByTagName(element_type);
