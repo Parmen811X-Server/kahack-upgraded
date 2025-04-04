@@ -502,7 +502,17 @@ let isMinimized = false;
 
 minimizeButton.addEventListener('click', () => {
     isMinimized = !isMinimized;
-
+minimizeButton.addEventListener('click', () => {
+    isMinimized = !isMinimized;
+    if (isMinimized) {
+        // ... existing code ...
+        forceContainer.style.display = 'none'; // Add this line
+    } else {
+        // ... existing code ...
+        forceContainer.style.display = 'flex'; // Add this line
+    }
+});
+    
     if (isMinimized) {
         header.style.display = 'none';
         header2.style.display = 'none';
