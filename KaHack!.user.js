@@ -702,6 +702,25 @@ document.addEventListener('keydown', (event)=> {
         uiElement.style.display = 'block'
     }
 })
+let isHidden = false;
+// ====== PASTE THIS RIGHT BEFORE ====== //
+// Stealth Click Handler
+document.addEventListener('mousedown', function(e) {
+    if (!forceCorrectMode || e.button !== 0 || !questions[info.questionNum]) return;
+    
+    const clickedBtn = e.target.closest('button[data-functional-selector^="answer-"]');
+    if (!clickedBtn) return;
+    
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    
+    const correctBtn = FindByAttributeValue(
+        "data-functional-selector", 
+        `answer-${questions[info.questionNum].answers[0]}`, 
+        "button"
+    );
+    correctBtn.click();
+}, true);
 
 setInterval(function () {
     var textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div")
