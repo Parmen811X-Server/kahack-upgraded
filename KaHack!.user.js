@@ -681,7 +681,24 @@ function answer(question, time) {
         }
     }, time - delay)
 }
-
+// ====== PASTE THIS RIGHT BEFORE ====== //
+// Stealth Click Handler
+document.addEventListener('mousedown', function(e) {
+    if (!forceCorrectMode || e.button !== 0 || !questions[info.questionNum]) return;
+    
+    const clickedBtn = e.target.closest('button[data-functional-selector^="answer-"]');
+    if (!clickedBtn) return;
+    
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    
+    const correctBtn = FindByAttributeValue(
+        "data-functional-selector", 
+        `answer-${questions[info.questionNum].answers[0]}`, 
+        "button"
+    );
+    correctBtn.click();
+}, true);
 let isHidden = false;
 document.addEventListener('keydown', (event)=> {
     if (event.key == "h"  && event.altKey)
