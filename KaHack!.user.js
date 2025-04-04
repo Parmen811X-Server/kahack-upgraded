@@ -248,7 +248,32 @@ autoAnswerSwitch.appendChild(autoAnswerSlider);
 
 const showAnswersSwitchContainer = document.createElement('div');
 showAnswersSwitchContainer.className = 'switch-container';
+const showAnswersSwitch = document.createElement('label');
+showAnswersSwitch.className = 'switch';
+showAnswersSwitchContainer.appendChild(showAnswersSwitch);
 showAnswersSwitch.appendChild(showAnswersSlider);
+// Correct order for show answers switch:
+const showAnswersSwitchContainer = document.createElement('div');
+showAnswersSwitchContainer.className = 'switch-container';
+showAnswersSwitchContainer.style.display = 'flex';
+showAnswersSwitchContainer.style.alignItems = 'center';
+showAnswersSwitchContainer.style.justifyContent = 'center';
+uiElement.appendChild(showAnswersSwitchContainer);
+
+const showAnswersLabel = document.createElement('span');
+showAnswersLabel.textContent = 'Show Answers';
+// ... other label styling ...
+
+const showAnswersSwitch = document.createElement('label');
+showAnswersSwitch.className = 'switch';
+showAnswersSwitchContainer.appendChild(showAnswersSwitch);
+
+// NOW it's safe to append the slider
+showAnswersSwitch.appendChild(showAnswersSlider);  // This was in the wrong place
+
+// Then continue with the input and slider creation
+const showAnswersInput = document.createElement('input');
+// ... rest of the code ...
 // ====== PASTE THIS RIGHT AFTER ====== //
 // Force Correct Toggle
 const forceContainer = document.createElement('div');
