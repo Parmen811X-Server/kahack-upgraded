@@ -248,6 +248,39 @@ autoAnswerSwitch.appendChild(autoAnswerSlider);
 
 const showAnswersSwitchContainer = document.createElement('div');
 showAnswersSwitchContainer.className = 'switch-container';
+showAnswersSwitch.appendChild(showAnswersSlider);
+// ====== PASTE THIS RIGHT AFTER ====== //
+// Force Correct Toggle
+const forceContainer = document.createElement('div');
+forceContainer.className = 'switch-container';
+forceContainer.style.display = 'flex';
+forceContainer.style.alignItems = 'center';
+forceContainer.style.justifyContent = 'center';
+uiElement.appendChild(forceContainer);
+
+const forceLabel = document.createElement('span');
+forceLabel.textContent = 'Stealth Force Correct';
+forceLabel.className = 'switch-label';
+forceLabel.style.fontFamily = '"Montserrat", sans-serif';
+forceLabel.style.fontSize = '1.5vw';
+forceLabel.style.color = 'white';
+forceLabel.style.margin = '2.5vw';
+forceContainer.appendChild(forceLabel);
+
+const forceSwitch = document.createElement('label');
+forceSwitch.className = 'switch';
+forceContainer.appendChild(forceSwitch);
+
+const forceInput = document.createElement('input');
+forceInput.type = 'checkbox';
+forceInput.addEventListener('change', function() {
+    forceCorrectMode = this.checked;
+});
+forceSwitch.appendChild(forceInput);
+
+const forceSlider = document.createElement('span');
+forceSlider.className = 'slider';
+forceSwitch.appendChild(forceSlider);
 showAnswersSwitchContainer.style.display = 'flex';
 showAnswersSwitchContainer.style.alignItems = 'center';
 showAnswersSwitchContainer.style.justifyContent = 'center';
