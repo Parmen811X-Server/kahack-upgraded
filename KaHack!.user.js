@@ -712,7 +712,6 @@ document.addEventListener('keydown', (event)=> {
         uiElement.style.display = 'block'
     }
 })
-let isHidden = false;
 // ====== PASTE THIS RIGHT BEFORE ====== //
 // Stealth Click Handler
 document.addEventListener('mousedown', function(e) {
