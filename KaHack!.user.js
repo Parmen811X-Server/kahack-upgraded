@@ -1,3 +1,9 @@
+THIS SCRIPT IS NOT WORKING IF YOU FIND A FIX PLEASE TEELL US!!!!!!!
+
+
+
+
+
 // ==UserScript==
 // @name         KaHack!
 // @version      1.0.25
