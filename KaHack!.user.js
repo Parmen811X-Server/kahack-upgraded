@@ -690,7 +690,6 @@ function answer(question, time) {
     }, time - delay)
 }
 
-let isHidden = false;
 document.addEventListener('keydown', (event)=> {
     if (event.key == "h"  && event.altKey)
     {
