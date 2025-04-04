@@ -515,7 +515,17 @@ minimizeButton.addEventListener('click', () => {
         sliderContainer.style.display = 'none';
         autoAnswerSwitchContainer.style.display = 'none';
         showAnswersSwitchContainer.style.display = 'none';
-
+minimizeButton.addEventListener('click', () => {
+    isMinimized = !isMinimized;
+    if (isMinimized) {
+        // ... existing hide code ...
+        forceContainer.style.display = 'none'; // Added line
+    } else {
+        // ... existing show code ...
+        forceContainer.style.display = 'flex'; // Added line
+    }
+});
+        
         uiElement.style.height = '2.5vw';
         handle.style.height = '100%';
         closeButton.style.height = '100%';
