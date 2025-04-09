@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         KaHack! Smooth Performance
-// @version      1.5.0
+// @name         KaHack! Ultimate Enhanced
+// @version      2.0.0
 // @namespace    https://github.com/jokeri2222
-// @description  Optimized Kahoot hack with lightweight effects
+// @description  Ultimate Kahoot hack with performance-friendly enhancements
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
 // @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack!.user.js
 // @author       jokeri2222; https://github.com/jokeri2222
@@ -14,15 +14,18 @@
 (function() {
     'use strict';
 
-    // Configuration
-    const Version = '1.5.0';
+    // Enhanced Configuration
+    const Version = '2.0.0';
     let questions = [];
     const info = {
         numQuestions: 0,
         questionNum: -1,
         lastAnsweredQuestion: -1,
         defaultIL: true,
-        ILSetQuestion: -1
+        ILSetQuestion: -1,
+        streak: 0,
+        highestStreak: 0,
+        totalCorrect: 0
     };
     let PPT = 950;
     let Answered_PPT = 950;
@@ -34,8 +37,9 @@
     let isAltRPressed = false;
     let rainbowInterval = null;
     let rainbowSpeed = 300;
+    let isSoundEnabled = false;
 
-    // Colors with simplified neon
+    // Enhanced Color Scheme
     const colors = {
         primary: '#0d0d1a',
         secondary: '#12122b',
@@ -50,7 +54,42 @@
         particleColors: ['#00ffff', '#ff00ff', '#ffff00']
     };
 
-    // Helper function
+    // Sound Effects (Performance-friendly)
+    const playSound = (type) => {
+        if (!isSoundEnabled) return;
+        
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            
+            switch(type) {
+                case 'success':
+                    osc.frequency.value = 880;
+                    break;
+                case 'error':
+                    osc.frequency.value = 220;
+                    break;
+                case 'toggle':
+                    osc.frequency.value = 523.25;
+                    break;
+                case 'click':
+                    osc.frequency.value = 349.23;
+                    break;
+            }
+            
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.3);
+        } catch (e) {
+            console.log("Audio error:", e);
+        }
+    };
+
+    // Enhanced Helper Function
     function FindByAttributeValue(attribute, value, element_type) {
         element_type = element_type || "*";
         const All = document.getElementsByTagName(element_type);
@@ -60,7 +99,7 @@
         return null;
     }
 
-    // Lightweight particle effect
+    // Optimized Particle Effect
     function createParticles(element, count = 5) {
         const rect = element.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -116,7 +155,7 @@
         }
     }
 
-    // Rainbow mode (optimized)
+    // Enhanced Rainbow Mode
     function startRainbowEffect() {
         if (rainbowInterval) clearInterval(rainbowInterval);
         
@@ -136,6 +175,7 @@
         
         applyRainbowColors();
         rainbowInterval = setInterval(applyRainbowColors, rainbowSpeed);
+        playSound('toggle');
     }
 
     function stopRainbowEffect() {
@@ -156,7 +196,7 @@
         });
     }
 
-    // Create optimized UI
+    // Create Enhanced UI
     const uiElement = document.createElement('div');
     uiElement.className = 'kahack-ui';
     Object.assign(uiElement.style, {
@@ -174,7 +214,7 @@
         willChange: 'transform'
     });
 
-    // Create header
+    // Create header with enhanced dragging
     const handle = document.createElement('div');
     handle.className = 'kahack-header';
     Object.assign(handle.style, {
@@ -191,7 +231,7 @@
     });
 
     const title = document.createElement('div');
-    title.textContent = 'KaHack! Smooth';
+    title.textContent = 'KaHack! Ultimate';
     title.style.fontWeight = 'bold';
     title.style.fontSize = '16px';
 
@@ -230,17 +270,19 @@
         transition: 'transform 0.2s ease'
     });
 
-    // Button hover effects
+    // Enhanced Button Interactions
     [minimizeButton, closeButton].forEach(btn => {
         btn.addEventListener('mouseenter', () => {
             btn.style.transform = 'scale(1.1)';
             createParticles(btn, 3);
+            playSound('click');
         });
         btn.addEventListener('mouseleave', () => {
             btn.style.transform = 'scale(1)';
         });
         btn.addEventListener('click', () => {
             createParticles(btn, 5);
+            playSound('toggle');
         });
     });
 
@@ -261,7 +303,7 @@
         backgroundColor: colors.primary
     });
 
-    // Create section function
+    // Enhanced Section Creation
     function createSection(titleText) {
         const section = document.createElement('div');
         Object.assign(section.style, {
@@ -292,7 +334,7 @@
         return { section, body: section };
     }
 
-    // Quiz ID Section
+    // Quiz ID Section with Enhanced Validation
     const quizIdSection = createSection('QUIZ ID');
     const inputBox = document.createElement('input');
     Object.assign(inputBox.style, {
@@ -309,7 +351,7 @@
     quizIdSection.body.appendChild(inputBox);
     content.appendChild(quizIdSection.section);
 
-    // Points Section
+    // Points Section with Enhanced Slider
     const pointsSection = createSection('POINTS PER QUESTION');
     const pointsSliderContainer = document.createElement('div');
     Object.assign(pointsSliderContainer.style, {
@@ -331,12 +373,18 @@
     pointsLabel.style.minWidth = '40px';
     pointsLabel.style.textAlign = 'center';
 
+    pointsSlider.addEventListener('input', function() {
+        PPT = +this.value;
+        pointsLabel.textContent = PPT;
+        playSound('click');
+    });
+
     pointsSliderContainer.appendChild(pointsSlider);
     pointsSliderContainer.appendChild(pointsLabel);
     pointsSection.body.appendChild(pointsSliderContainer);
     content.appendChild(pointsSection.section);
 
-    // Answering Section
+    // Answering Section with Enhanced Toggles
     const answeringSection = createSection('ANSWERING');
 
     function createToggle(labelText, checked, onChange) {
@@ -401,6 +449,7 @@
             slider.style.backgroundColor = this.checked ? colors.correct : colors.incorrect;
             sliderBefore.style.left = this.checked ? '26px' : '4px';
             createParticles(slider, 3);
+            playSound('toggle');
         });
 
         toggle.appendChild(input);
@@ -423,9 +472,16 @@
             resetAnswerColors();
         }
     }));
+
+    // Sound Toggle
+    answeringSection.body.appendChild(createToggle('Enable Sounds', isSoundEnabled, function(checked) {
+        isSoundEnabled = checked;
+        if (checked) playSound('success');
+    }));
+
     content.appendChild(answeringSection.section);
 
-    // Rainbow Section
+    // Rainbow Section with Enhanced Controls
     const rainbowSection = createSection('RAINBOW MODE');
     const rainbowContainer = document.createElement('div');
     Object.assign(rainbowContainer.style, {
@@ -447,7 +503,7 @@
     rainbowLabel.style.minWidth = '50px';
     rainbowLabel.style.textAlign = 'center';
 
-    // Rainbow toggle button
+    // Enhanced Rainbow Button
     const rainbowButton = document.createElement('button');
     rainbowButton.textContent = 'Toggle Rainbow';
     Object.assign(rainbowButton.style, {
@@ -464,6 +520,7 @@
     
     rainbowButton.addEventListener('mouseenter', () => {
         rainbowButton.style.transform = 'scale(1.02)';
+        playSound('click');
     });
     rainbowButton.addEventListener('mouseleave', () => {
         rainbowButton.style.transform = 'scale(1)';
@@ -479,13 +536,22 @@
         createParticles(rainbowButton, 5);
     });
     
+    rainbowSlider.addEventListener('input', function() {
+        rainbowSpeed = +this.value;
+        rainbowLabel.textContent = rainbowSpeed + 'ms';
+        if (rainbowInterval) {
+            startRainbowEffect();
+        }
+        playSound('click');
+    });
+    
     rainbowContainer.appendChild(rainbowSlider);
     rainbowContainer.appendChild(rainbowLabel);
     rainbowSection.body.appendChild(rainbowContainer);
     rainbowSection.body.appendChild(rainbowButton);
     content.appendChild(rainbowSection.section);
 
-    // Keybinds Section
+    // Enhanced Keybinds Section
     const keybindsSection = createSection('KEYBINDS');
     const keybindsList = document.createElement('div');
     keybindsList.style.color = colors.text;
@@ -520,29 +586,43 @@
     keybindsSection.body.appendChild(keybindsList);
     content.appendChild(keybindsSection.section);
 
-    // Info Section
-    const infoSection = createSection('INFO');
+    // Enhanced Stats Section
+    const statsSection = createSection('STATISTICS');
     const questionsLabel = document.createElement('div');
     questionsLabel.textContent = 'Question: 0/0';
     questionsLabel.style.color = colors.text;
-    infoSection.body.appendChild(questionsLabel);
+    statsSection.body.appendChild(questionsLabel);
 
     const inputLagLabel = document.createElement('div');
     inputLagLabel.textContent = 'Input lag: 100ms';
     inputLagLabel.style.color = colors.text;
-    infoSection.body.appendChild(inputLagLabel);
+    statsSection.body.appendChild(inputLagLabel);
 
+    const streakLabel = document.createElement('div');
+    streakLabel.textContent = 'Streak: 0 (Highest: 0)';
+    streakLabel.style.color = colors.text;
+    statsSection.body.appendChild(streakLabel);
+
+    const correctLabel = document.createElement('div');
+    correctLabel.textContent = 'Correct Answers: 0';
+    correctLabel.style.color = colors.text;
+    statsSection.body.appendChild(correctLabel);
+
+    content.appendChild(statsSection);
+
+    // Version Info
+    const versionSection = createSection('INFO');
     const versionLabel = document.createElement('div');
     versionLabel.textContent = 'Version: ' + Version;
     versionLabel.style.color = colors.text;
-    infoSection.body.appendChild(versionLabel);
-    content.appendChild(infoSection.section);
+    versionSection.body.appendChild(versionLabel);
+    content.appendChild(versionSection);
 
     // Add UI to document
     document.body.appendChild(uiElement);
     uiElement.appendChild(content);
 
-    // Optimized dragging functionality
+    // Enhanced Dragging Functionality
     let isDragging = false;
     let offsetX, offsetY;
     let dragFrame;
@@ -553,6 +633,7 @@
         offsetY = e.clientY - uiElement.getBoundingClientRect().top;
         document.body.style.userSelect = 'none';
         cancelAnimationFrame(dragFrame);
+        playSound('click');
     });
 
     function handleDrag(e) {
@@ -572,10 +653,11 @@
         if (isDragging) {
             isDragging = false;
             document.body.style.userSelect = '';
+            playSound('click');
         }
     });
 
-    // Quiz ID validation
+    // Enhanced Quiz ID Validation
     function handleInputChange() {
         const quizID = inputBox.value.trim();
         
@@ -598,17 +680,19 @@
                 info.numQuestions = questions.length;
                 questionsLabel.textContent = 'Question: 0/' + info.numQuestions;
                 createParticles(inputBox, 8);
+                playSound('success');
             })
             .catch(function() {
                 inputBox.style.backgroundColor = colors.incorrect;
                 info.numQuestions = 0;
                 questionsLabel.textContent = 'Question: 0/0';
+                playSound('error');
             });
     }
 
     inputBox.addEventListener('input', handleInputChange);
 
-    // Answer highlighting
+    // Enhanced Answer Highlighting
     function highlightAnswers(question) {
         if (!question) return;
         
@@ -644,7 +728,7 @@
         }
     }
 
-    // Question answering
+    // Enhanced Question Answering with Stats
     function answer(question, time) {
         Answered_PPT = PPT;
         const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
@@ -665,7 +749,18 @@
                     if (submitBtn) submitBtn.click();
                 }, 0);
             }
+            
+            // Update stats
+            info.streak++;
+            info.totalCorrect++;
+            if (info.streak > info.highestStreak) info.highestStreak = info.streak;
+            updateStats();
         }, time - delay);
+    }
+
+    function updateStats() {
+        streakLabel.textContent = `Streak: ${info.streak} (Highest: ${info.highestStreak})`;
+        correctLabel.textContent = `Correct Answers: ${info.totalCorrect}`;
     }
 
     function onQuestionStart() {
@@ -682,7 +777,7 @@
         }
     }
 
-    // Parse questions
+    // Enhanced Question Parser
     function parseQuestions(questionsJson) {
         const parsed = [];
         questionsJson.forEach(function(question) {
@@ -711,34 +806,69 @@
         return parsed;
     }
 
-    // Event listeners
+    // Enhanced Event Listeners
     closeButton.addEventListener('click', function() {
         document.body.removeChild(uiElement);
         autoAnswer = false;
         showAnswers = false;
         stopRainbowEffect();
+        playSound('toggle');
     });
 
     let isMinimized = false;
     minimizeButton.addEventListener('click', function() {
         isMinimized = !isMinimized;
         content.style.display = isMinimized ? 'none' : 'flex';
+        playSound('click');
     });
 
-    pointsSlider.addEventListener('input', function() {
-        PPT = +this.value;
-        pointsLabel.textContent = PPT;
-    });
-
-    rainbowSlider.addEventListener('input', function() {
-        rainbowSpeed = +this.value;
-        rainbowLabel.textContent = rainbowSpeed + 'ms';
-        if (rainbowInterval) {
-            startRainbowEffect(); // Restart with new speed
+    // Enhanced Main Interval with Stats Tracking
+    setInterval(function() {
+        // Update question number
+        const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
+        if (textElement) {
+            info.questionNum = parseInt(textElement.textContent) - 1;
+            questionsLabel.textContent = 'Question: ' + (info.questionNum + 1) + '/' + info.numQuestions;
         }
-    });
+        
+        // Detect new question
+        if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
+            info.lastAnsweredQuestion !== info.questionNum) {
+            info.lastAnsweredQuestion = info.questionNum;
+            onQuestionStart();
+        }
+        
+        // Reset streak if wrong answer
+        const wrongAnswerElement = document.querySelector('[data-functional-selector*="feedback-text"]');
+        if (wrongAnswerElement && wrongAnswerElement.textContent.includes("Wrong")) {
+            info.streak = 0;
+            updateStats();
+        }
+        
+        // Update input lag for auto-answer
+        if (autoAnswer && info.ILSetQuestion !== info.questionNum) {
+            const incrementElement = FindByAttributeValue("data-functional-selector", "score-increment", "span");
+            if (incrementElement) {
+                info.ILSetQuestion = info.questionNum;
+                const incrementText = incrementElement.textContent;
+                const increment = parseInt(incrementText.split(" ")[1]);
+                
+                if (!isNaN(increment) && increment !== 0) {
+                    const ppt = Answered_PPT > 987 ? 1000 : Answered_PPT;
+                    const adjustment = (ppt - increment) * 15;
+                    
+                    if (inputLag + adjustment < 0) {
+                        adjustment = (ppt - increment / 2) * 15;
+                    }
+                    
+                    inputLag = Math.max(0, Math.round(inputLag + adjustment));
+                    inputLagLabel.textContent = 'Input lag: ' + inputLag + 'ms';
+                }
+            }
+        }
+    }, 50);
 
-    // Keybind handlers
+    // Enhanced Keybind Handlers
     document.addEventListener('keydown', function(e) {
         // ALT+H - Toggle full stealth mode
         if (e.key.toLowerCase() === 'h' && e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -747,12 +877,14 @@
             uiElement.style.opacity = isAltHPressed ? '0' : '1';
             uiElement.style.pointerEvents = isAltHPressed ? 'none' : 'auto';
             createParticles(uiElement, 10);
+            playSound('toggle');
         }
         
         // SHIFT - Quick hide/show
         if (e.key === 'Shift' && !e.altKey && !e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             uiElement.style.opacity = uiElement.style.opacity === '0' ? '1' : '0';
+            playSound('click');
         }
         
         // ALT+W - Answer correctly
@@ -776,6 +908,13 @@
                     if (submitBtn) submitBtn.click();
                 }, 50);
             }
+            
+            // Update stats
+            info.streak++;
+            info.totalCorrect++;
+            if (info.streak > info.highestStreak) info.highestStreak = info.streak;
+            updateStats();
+            playSound('success');
         }
         
         // ALT+S - Show answers while held
@@ -783,6 +922,7 @@
             e.preventDefault();
             isAltSPressed = true;
             highlightAnswers(questions[info.questionNum]);
+            playSound('toggle');
         }
         
         // ALT+R - Rainbow mode while held
@@ -809,46 +949,7 @@
         }
     });
 
-    // Main interval
-    setInterval(function() {
-        // Update question number
-        const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
-        if (textElement) {
-            info.questionNum = parseInt(textElement.textContent) - 1;
-            questionsLabel.textContent = 'Question: ' + (info.questionNum + 1) + '/' + info.numQuestions;
-        }
-        
-        // Detect new question
-        if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
-            info.lastAnsweredQuestion !== info.questionNum) {
-            info.lastAnsweredQuestion = info.questionNum;
-            onQuestionStart();
-        }
-        
-        // Update input lag for auto-answer
-        if (autoAnswer && info.ILSetQuestion !== info.questionNum) {
-            const incrementElement = FindByAttributeValue("data-functional-selector", "score-increment", "span");
-            if (incrementElement) {
-                info.ILSetQuestion = info.questionNum;
-                const incrementText = incrementElement.textContent;
-                const increment = parseInt(incrementText.split(" ")[1]);
-                
-                if (!isNaN(increment) && increment !== 0) {
-                    const ppt = Answered_PPT > 987 ? 1000 : Answered_PPT;
-                    const adjustment = (ppt - increment) * 15;
-                    
-                    if (inputLag + adjustment < 0) {
-                        adjustment = (ppt - increment / 2) * 15;
-                    }
-                    
-                    inputLag = Math.max(0, Math.round(inputLag + adjustment));
-                    inputLagLabel.textContent = 'Input lag: ' + inputLag + 'ms';
-                }
-            }
-        }
-    }, 50);
-
-    // Add CSS styles
+    // Add Enhanced CSS styles
     const style = document.createElement('style');
     style.textContent = `
         .kahack-ui {
@@ -878,6 +979,9 @@
         }
         button {
             transition: transform 0.2s ease;
+        }
+        button:hover {
+            transform: scale(1.02);
         }
     `;
     document.head.appendChild(style);
