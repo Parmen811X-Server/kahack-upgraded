@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         KaHack! Ultimate Enhanced
-// @version      2.0.0
+// @name         KaHack! Ultimate Fixed
+// @version      2.0.1
 // @namespace    https://github.com/jokeri2222
-// @description  Ultimate Kahoot hack with performance-friendly enhancements
+// @description  Fixed Kahoot hack with all enhancements
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
 // @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack!.user.js
 // @author       jokeri2222; https://github.com/jokeri2222
@@ -14,8 +14,8 @@
 (function() {
     'use strict';
 
-    // Enhanced Configuration
-    const Version = '2.0.0';
+    // Configuration
+    const Version = '2.0.1';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -39,7 +39,7 @@
     let rainbowSpeed = 300;
     let isSoundEnabled = false;
 
-    // Enhanced Color Scheme
+    // Color Scheme
     const colors = {
         primary: '#0d0d1a',
         secondary: '#12122b',
@@ -54,7 +54,7 @@
         particleColors: ['#00ffff', '#ff00ff', '#ffff00']
     };
 
-    // Sound Effects (Performance-friendly)
+    // Sound Effects
     const playSound = (type) => {
         if (!isSoundEnabled) return;
         
@@ -67,18 +67,10 @@
             gain.connect(ctx.destination);
             
             switch(type) {
-                case 'success':
-                    osc.frequency.value = 880;
-                    break;
-                case 'error':
-                    osc.frequency.value = 220;
-                    break;
-                case 'toggle':
-                    osc.frequency.value = 523.25;
-                    break;
-                case 'click':
-                    osc.frequency.value = 349.23;
-                    break;
+                case 'success': osc.frequency.value = 880; break;
+                case 'error': osc.frequency.value = 220; break;
+                case 'toggle': osc.frequency.value = 523.25; break;
+                case 'click': osc.frequency.value = 349.23; break;
             }
             
             gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
@@ -89,7 +81,7 @@
         }
     };
 
-    // Enhanced Helper Function
+    // Helper Function
     function FindByAttributeValue(attribute, value, element_type) {
         element_type = element_type || "*";
         const All = document.getElementsByTagName(element_type);
@@ -99,8 +91,10 @@
         return null;
     }
 
-    // Optimized Particle Effect
+    // Particle Effect (Fixed)
     function createParticles(element, count = 5) {
+        if (!element || !element.getBoundingClientRect) return;
+        
         const rect = element.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
@@ -138,7 +132,9 @@
                 const progress = elapsed / duration;
                 
                 if (progress >= 1) {
-                    particle.remove();
+                    if (particle && particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
                     return;
                 }
                 
@@ -155,7 +151,7 @@
         }
     }
 
-    // Enhanced Rainbow Mode
+    // Rainbow Mode
     function startRainbowEffect() {
         if (rainbowInterval) clearInterval(rainbowInterval);
         
@@ -165,11 +161,13 @@
             );
             
             buttons.forEach(button => {
-                const randomColor = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
-                button.style.cssText = `
-                    background-color: ${randomColor} !important;
-                    transition: background-color ${rainbowSpeed/1000}s ease !important;
-                `;
+                if (button) {
+                    const randomColor = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
+                    button.style.cssText = `
+                        background-color: ${randomColor} !important;
+                        transition: background-color ${rainbowSpeed/1000}s ease !important;
+                    `;
+                }
             });
         }
         
@@ -191,12 +189,14 @@
             'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
         );
         buttons.forEach(button => {
-            button.style.removeProperty('background-color');
-            button.style.removeProperty('transition');
+            if (button) {
+                button.style.removeProperty('background-color');
+                button.style.removeProperty('transition');
+            }
         });
     }
 
-    // Create Enhanced UI
+    // Create UI
     const uiElement = document.createElement('div');
     uiElement.className = 'kahack-ui';
     Object.assign(uiElement.style, {
@@ -214,7 +214,7 @@
         willChange: 'transform'
     });
 
-    // Create header with enhanced dragging
+    // Create Header
     const handle = document.createElement('div');
     handle.className = 'kahack-header';
     Object.assign(handle.style, {
@@ -270,7 +270,7 @@
         transition: 'transform 0.2s ease'
     });
 
-    // Enhanced Button Interactions
+    // Button Events
     [minimizeButton, closeButton].forEach(btn => {
         btn.addEventListener('mouseenter', () => {
             btn.style.transform = 'scale(1.1)';
@@ -292,7 +292,7 @@
     handle.appendChild(buttonContainer);
     uiElement.appendChild(handle);
 
-    // Create content container
+    // Create Content
     const content = document.createElement('div');
     content.className = 'kahack-content';
     Object.assign(content.style, {
@@ -303,7 +303,7 @@
         backgroundColor: colors.primary
     });
 
-    // Enhanced Section Creation
+    // Section Creation
     function createSection(titleText) {
         const section = document.createElement('div');
         Object.assign(section.style, {
@@ -334,7 +334,7 @@
         return { section, body: section };
     }
 
-    // Quiz ID Section with Enhanced Validation
+    // Quiz ID Section
     const quizIdSection = createSection('QUIZ ID');
     const inputBox = document.createElement('input');
     Object.assign(inputBox.style, {
@@ -351,7 +351,7 @@
     quizIdSection.body.appendChild(inputBox);
     content.appendChild(quizIdSection.section);
 
-    // Points Section with Enhanced Slider
+    // Points Section
     const pointsSection = createSection('POINTS PER QUESTION');
     const pointsSliderContainer = document.createElement('div');
     Object.assign(pointsSliderContainer.style, {
@@ -384,7 +384,7 @@
     pointsSection.body.appendChild(pointsSliderContainer);
     content.appendChild(pointsSection.section);
 
-    // Answering Section with Enhanced Toggles
+    // Answering Section
     const answeringSection = createSection('ANSWERING');
 
     function createToggle(labelText, checked, onChange) {
@@ -473,7 +473,6 @@
         }
     }));
 
-    // Sound Toggle
     answeringSection.body.appendChild(createToggle('Enable Sounds', isSoundEnabled, function(checked) {
         isSoundEnabled = checked;
         if (checked) playSound('success');
@@ -481,7 +480,7 @@
 
     content.appendChild(answeringSection.section);
 
-    // Rainbow Section with Enhanced Controls
+    // Rainbow Section
     const rainbowSection = createSection('RAINBOW MODE');
     const rainbowContainer = document.createElement('div');
     Object.assign(rainbowContainer.style, {
@@ -503,7 +502,6 @@
     rainbowLabel.style.minWidth = '50px';
     rainbowLabel.style.textAlign = 'center';
 
-    // Enhanced Rainbow Button
     const rainbowButton = document.createElement('button');
     rainbowButton.textContent = 'Toggle Rainbow';
     Object.assign(rainbowButton.style, {
@@ -551,7 +549,7 @@
     rainbowSection.body.appendChild(rainbowButton);
     content.appendChild(rainbowSection.section);
 
-    // Enhanced Keybinds Section
+    // Keybinds Section
     const keybindsSection = createSection('KEYBINDS');
     const keybindsList = document.createElement('div');
     keybindsList.style.color = colors.text;
@@ -586,7 +584,7 @@
     keybindsSection.body.appendChild(keybindsList);
     content.appendChild(keybindsSection.section);
 
-    // Enhanced Stats Section
+    // Stats Section
     const statsSection = createSection('STATISTICS');
     const questionsLabel = document.createElement('div');
     questionsLabel.textContent = 'Question: 0/0';
@@ -618,11 +616,18 @@
     versionSection.body.appendChild(versionLabel);
     content.appendChild(versionSection);
 
-    // Add UI to document
-    document.body.appendChild(uiElement);
-    uiElement.appendChild(content);
+    // Add UI to document (with safety check)
+    if (document.body) {
+        document.body.appendChild(uiElement);
+        uiElement.appendChild(content);
+    } else {
+        window.addEventListener('DOMContentLoaded', () => {
+            document.body.appendChild(uiElement);
+            uiElement.appendChild(content);
+        });
+    }
 
-    // Enhanced Dragging Functionality
+    // Dragging Functionality
     let isDragging = false;
     let offsetX, offsetY;
     let dragFrame;
@@ -657,7 +662,7 @@
         }
     });
 
-    // Enhanced Quiz ID Validation
+    // Quiz ID Validation
     function handleInputChange() {
         const quizID = inputBox.value.trim();
         
@@ -692,7 +697,7 @@
 
     inputBox.addEventListener('input', handleInputChange);
 
-    // Enhanced Answer Highlighting
+    // Answer Highlighting
     function highlightAnswers(question) {
         if (!question) return;
         
@@ -700,12 +705,12 @@
             'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
         );
         
-        // Reset all buttons first
         answerButtons.forEach(function(button) {
-            button.style.removeProperty('background-color');
+            if (button) {
+                button.style.removeProperty('background-color');
+            }
         });
         
-        // Highlight correct answers
         if (question.answers) {
             question.answers.forEach(function(answer) {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
@@ -716,7 +721,6 @@
             });
         }
         
-        // Highlight incorrect answers
         if (question.incorrectAnswers) {
             question.incorrectAnswers.forEach(function(answer) {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
@@ -728,7 +732,7 @@
         }
     }
 
-    // Enhanced Question Answering with Stats
+    // Question Answering with Stats
     function answer(question, time) {
         Answered_PPT = PPT;
         const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
@@ -750,7 +754,6 @@
                 }, 0);
             }
             
-            // Update stats
             info.streak++;
             info.totalCorrect++;
             if (info.streak > info.highestStreak) info.highestStreak = info.streak;
@@ -777,7 +780,7 @@
         }
     }
 
-    // Enhanced Question Parser
+    // Question Parser
     function parseQuestions(questionsJson) {
         const parsed = [];
         questionsJson.forEach(function(question) {
@@ -806,9 +809,11 @@
         return parsed;
     }
 
-    // Enhanced Event Listeners
+    // Event Listeners
     closeButton.addEventListener('click', function() {
-        document.body.removeChild(uiElement);
+        if (uiElement && uiElement.parentNode) {
+            uiElement.parentNode.removeChild(uiElement);
+        }
         autoAnswer = false;
         showAnswers = false;
         stopRainbowEffect();
@@ -822,7 +827,7 @@
         playSound('click');
     });
 
-    // Enhanced Main Interval with Stats Tracking
+    // Main Interval
     setInterval(function() {
         // Update question number
         const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
@@ -868,7 +873,7 @@
         }
     }, 50);
 
-    // Enhanced Keybind Handlers
+    // Keybind Handlers
     document.addEventListener('keydown', function(e) {
         // ALT+H - Toggle full stealth mode
         if (e.key.toLowerCase() === 'h' && e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -909,7 +914,6 @@
                 }, 50);
             }
             
-            // Update stats
             info.streak++;
             info.totalCorrect++;
             if (info.streak > info.highestStreak) info.highestStreak = info.streak;
@@ -949,7 +953,7 @@
         }
     });
 
-    // Add Enhanced CSS styles
+    // Add CSS styles
     const style = document.createElement('style');
     style.textContent = `
         .kahack-ui {
