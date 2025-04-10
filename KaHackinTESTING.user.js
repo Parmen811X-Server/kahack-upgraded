@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         KaHack! Smooth Performance
-// @version      1.6.2
+// @version      1.6.3
 // @namespace    https://github.com/jokeri2222
-// @description  Optimized Kahoot hack with lightweight effects and improved UI
+// @description  Optimized Kahoot hack with lightweight effects
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
 // @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack!.user.js
 // @author       jokeri2222; https://github.com/jokeri2222
@@ -15,7 +15,7 @@
     'use strict';
 
     // Configuration
-    const Version = '1.6.2';
+    const Version = '1.6.3';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -224,8 +224,8 @@
         const parsed = [];
         questionsJson.forEach(question => {
             const q = { 
-                type: question.type || 'quiz', // Default to quiz if type not specified
-                time: question.time || 20000,  // Default time if not specified
+                type: question.type || 'quiz',
+                time: question.time || 20000,
                 answers: [],
                 incorrectAnswers: []
             };
@@ -264,6 +264,17 @@
                 if (btn) {
                     btn.style.backgroundColor = neon.correct;
                     btn.style.boxShadow = neon.glow.correct;
+                }
+            });
+        }
+        
+        if (question.incorrectAnswers && question.incorrectAnswers.length > 0) {
+            question.incorrectAnswers.forEach(answer => {
+                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
+                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
+                if (btn) {
+                    btn.style.backgroundColor = neon.incorrect;
+                    btn.style.boxShadow = neon.glow.incorrect;
                 }
             });
         }
@@ -309,11 +320,6 @@
             const answerTime = (question.time - question.time / (500 / (settings.PPT - 500))) - settings.inputLag;
             setTimeout(() => answerQuestion(question), answerTime);
         }
-    }
-
-    function optimizePerformance() {
-        clearInterval(state.mainInterval);
-        state.mainInterval = setInterval(mainLoop, settings.autoAnswer ? 50 : 1000);
     }
 
     function mainLoop() {
@@ -371,7 +377,7 @@
             position: 'fixed',
             top: '20px',
             left: '20px',
-            width: '320px', // Reduced width to prevent overflow
+            width: '320px',
             maxHeight: '70vh',
             backgroundColor: neon.primary,
             borderRadius: '10px',
@@ -504,10 +510,10 @@
         // Create Content Container
         const content = document.createElement('div');
         Object.assign(content.style, {
-            padding: '12px', // Reduced padding
+            padding: '12px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '12px', // Reduced gap
+            gap: '12px',
             backgroundColor: neon.primary
         });
 
@@ -515,7 +521,7 @@
         const quizIdSection = createSection('QUIZ ID');
         const inputBox = document.createElement('input');
         Object.assign(inputBox.style, {
-            width: 'calc(100% - 16px)', // Adjusted width
+            width: 'calc(100% - 16px)',
             padding: '8px',
             borderRadius: '6px',
             border: '1px solid #555',
@@ -567,7 +573,6 @@
         answeringSection.appendChild(createToggle('Auto Answer', settings.autoAnswer, function(checked) {
             settings.autoAnswer = checked;
             info.ILSetQuestion = info.questionNum;
-            optimizePerformance();
         }));
 
         answeringSection.appendChild(createToggle('Show Answers', settings.showAnswers, function(checked) {
@@ -939,8 +944,8 @@
             }
         });
 
-        // Start main loop
-        optimizePerformance();
+        // Start main loop with faster interval (like original)
+        state.mainInterval = setInterval(mainLoop, 1);
     }
 
     // Start the script
