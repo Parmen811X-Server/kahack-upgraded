@@ -1,9 +1,13 @@
 // ==UserScript==
-// @name         KaHack! Neon Performance
-// @version      7.1.0
+// @name         KaHack! Smooth Performance
+// @version      1.6.0
 // @namespace    https://github.com/jokeri2222
-// @description  Optimized Kahoot hack with neon UI and flawless functionality
+// @description  Optimized Kahoot hack with lightweight effects and improved UI
+// @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
+// @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack!.user.js
+// @author       jokeri2222; https://github.com/jokeri2222
 // @match        https://kahoot.it/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=kahoot.it
 // @grant        none
 // ==/UserScript==
 
@@ -11,7 +15,7 @@
     'use strict';
 
     // Configuration
-    const Version = '7.1.0';
+    const Version = '1.6.0';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -22,19 +26,16 @@
         streak: 0,
         highestStreak: 0,
         totalCorrect: 0,
-        totalAnswered: 0,
-        botCount: 0,
-        hostToken: null
+        totalAnswered: 0
     };
 
     const settings = {
         PPT: 950,
+        Answered_PPT: 950,
         autoAnswer: false,
         showAnswers: false,
         inputLag: 100,
-        rainbowSpeed: 300,
-        maxBots: 50,
-        botJoinDelay: 1000
+        rainbowSpeed: 300
     };
 
     const state = {
@@ -45,9 +46,7 @@
         mainInterval: null,
         isDragging: false,
         dragOffsetX: 0,
-        dragOffsetY: 0,
-        bots: [],
-        websocket: null
+        dragOffsetY: 0
     };
 
     // Neon Color Scheme
@@ -60,8 +59,6 @@
         incorrect: '#ff3860',
         close: '#ff3860',
         minimize: '#7f7fff',
-        bot: '#00ffff',
-        host: '#ff00ff',
         rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
         glow: {
             correct: '0 0 15px #00ff88, 0 0 30px #00ff8840',
@@ -367,74 +364,6 @@
     }
 
     // ======================
-    // BOT & HOST FUNCTIONS
-    // ======================
-
-    function joinAsBot(name, gamePin) {
-        return new Promise((resolve) => {
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.src = `https://kahoot.it/?pin=${gamePin}&bot=${name}`;
-            
-            iframe.onload = () => {
-                setTimeout(() => {
-                    document.body.removeChild(iframe);
-                    resolve();
-                }, 3000);
-            };
-            
-            document.body.appendChild(iframe);
-        });
-    }
-
-    async function startMassJoin() {
-        const gamePin = prompt('Enter game PIN for bots:');
-        if (!gamePin) return;
-        
-        const botCount = Math.min(settings.maxBots, parseInt(prompt('How many bots? (Max 50)', '10')) || 0);
-        if (botCount < 1) {
-            alert('Invalid number!');
-            return;
-        }
-        
-        for (let i = 1; i <= botCount; i++) {
-            const botName = `Bot${Math.floor(Math.random() * 1000)}`;
-            await joinAsBot(botName, gamePin);
-            info.botCount++;
-            updateStats();
-            await new Promise(resolve => setTimeout(resolve, settings.botJoinDelay));
-        }
-    }
-
-    function sniffHostToken() {
-        if (info.hostToken) {
-            alert(`Host token already found: ${info.hostToken}`);
-            return;
-        }
-        
-        const origWebSocket = window.WebSocket;
-        window.WebSocket = function(...args) {
-            const ws = new origWebSocket(...args);
-            
-            ws.addEventListener('message', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.channel === '/service/player' && data.data?.id) {
-                        info.hostToken = data.data.id;
-                        updateStats();
-                        alert(`Host token captured: ${info.hostToken}`);
-                    }
-                } catch (e) {}
-            });
-            
-            state.websocket = ws;
-            return ws;
-        };
-        
-        alert('Host token sniffer activated! Join a game as player.');
-    }
-
-    // ======================
     // UI FUNCTIONS
     // ======================
 
@@ -473,7 +402,7 @@
         });
 
         const title = document.createElement('div');
-        title.textContent = 'KaHack! Neon';
+        title.textContent = 'KaHack! Smooth';
         title.style.fontWeight = 'bold';
         title.style.fontSize = '16px';
         title.style.textShadow = '0 0 10px #7f7fff';
@@ -715,48 +644,6 @@
         rainbowSection.appendChild(rainbowButton);
         content.appendChild(rainbowSection);
 
-        // Bot Army Section
-        const botSection = createSection('BOT ARMY');
-        
-        const botButton = document.createElement('button');
-        botButton.textContent = 'Start Mass Join';
-        Object.assign(botButton.style, {
-            width: '100%',
-            padding: '8px',
-            backgroundColor: neon.bot,
-            color: '#000',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            marginBottom: '10px',
-            transition: 'transform 0.2s ease',
-            boxShadow: '0 0 10px #00ffff'
-        });
-        botButton.addEventListener('click', startMassJoin);
-        botButton.addEventListener('mouseenter', () => botButton.style.transform = 'scale(1.02)');
-        botButton.addEventListener('mouseleave', () => botButton.style.transform = 'scale(1)');
-        botSection.appendChild(botButton);
-
-        const hostButton = document.createElement('button');
-        hostButton.textContent = 'Sniff Host Token';
-        Object.assign(hostButton.style, {
-            width: '100%',
-            padding: '8px',
-            backgroundColor: neon.host,
-            color: '#000',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease',
-            boxShadow: '0 0 10px #ff00ff'
-        });
-        hostButton.addEventListener('click', sniffHostToken);
-        hostButton.addEventListener('mouseenter', () => hostButton.style.transform = 'scale(1.02)');
-        hostButton.addEventListener('mouseleave', () => hostButton.style.transform = 'scale(1)');
-        botSection.appendChild(hostButton);
-
-        content.appendChild(botSection);
-
         // Keybinds Section
         const keybindsSection = createSection('KEYBINDS');
         const keybindsList = document.createElement('div');
@@ -769,9 +656,7 @@
             ['ALT + W', 'Answer correctly'],
             ['ALT + S', 'Show answers (while held)'],
             ['ALT + R', 'Rainbow mode (while held)'],
-            ['Shift', 'Quick hide/show'],
-            ['ALT + B', 'Mass join bots'],
-            ['ALT + T', 'Sniff host token']
+            ['Shift', 'Quick hide/show']
         ];
         
         keybinds.forEach(([key, desc]) => {
@@ -801,8 +686,6 @@
         statsSection.appendChild(createStatElement('Question: 0/0'));
         statsSection.appendChild(createStatElement('Streak: 0 (Highest: 0)'));
         statsSection.appendChild(createStatElement('Correct: 0/0 (0%)'));
-        statsSection.appendChild(createStatElement('Active Bots: 0'));
-        statsSection.appendChild(createStatElement('Host Token: None'));
         statsSection.appendChild(createStatElement('Input lag: 100ms'));
         
         content.appendChild(statsSection);
@@ -935,24 +818,13 @@
             `Question: ${info.questionNum + 1}/${info.numQuestions}`,
             `Streak: ${info.streak} (Highest: ${info.highestStreak})`,
             `Correct: ${info.totalCorrect}/${info.totalAnswered} (${info.totalAnswered ? Math.round((info.totalCorrect / info.totalAnswered) * 100) : 0}%)`,
-            `Active Bots: ${info.botCount}`,
-            `Host Token: ${info.hostToken ? 'Captured' : 'None'}`,
             `Input lag: ${settings.inputLag}ms`
         ];
         
         stats.forEach(stat => {
             const id = 'stat-' + stat.split(':')[0].toLowerCase().trim().replace(' ', '-');
             const el = document.getElementById(id);
-            if (el) {
-                el.textContent = stat;
-                if (id.includes('host-token') && info.hostToken) {
-                    el.style.color = neon.host;
-                    el.style.textShadow = '0 0 10px #ff00ff';
-                } else if (id.includes('active-bots') && info.botCount > 0) {
-                    el.style.color = neon.bot;
-                    el.style.textShadow = '0 0 10px #00ffff';
-                }
-            }
+            if (el) el.textContent = stat;
         });
     }
 
@@ -1073,18 +945,6 @@
                 e.preventDefault();
                 state.isAltRPressed = true;
                 startRainbowEffect();
-            }
-            
-            // ALT+B - Mass join bots
-            if (e.key.toLowerCase() === 'b' && e.altKey) {
-                e.preventDefault();
-                startMassJoin();
-            }
-            
-            // ALT+T - Sniff host token
-            if (e.key.toLowerCase() === 't' && e.altKey) {
-                e.preventDefault();
-                sniffHostToken();
             }
         });
 
