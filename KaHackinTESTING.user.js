@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         KaHack! Ultimate Edition
-// @version      6.1.0
+// @name         KaHack! Neon Edition
+// @version      7.0.0
 // @namespace    https://github.com/jokeri2222
-// @description  Advanced Kahoot hack with scrollable UI and bot features
+// @description  Ultimate Kahoot hack with neon effects and flawless functionality
 // @match        https://kahoot.it/*
 // @grant        none
 // ==/UserScript==
@@ -11,9 +11,9 @@
     'use strict';
 
     // ======================
-    // CORE CONFIGURATION
+    // NEON CONFIGURATION
     // ======================
-    const Version = '6.1.0';
+    const Version = '7.0.0';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -24,24 +24,20 @@
         totalCorrect: 0,
         totalAnswered: 0,
         botCount: 0,
-        hostToken: null,
-        ILSetQuestion: -1
+        hostToken: null
     };
 
-    let settings = {
+    const settings = {
         PPT: 950,
         autoAnswer: false,
         showAnswers: false,
         inputLag: 100,
         rainbowSpeed: 300,
-        isSoundEnabled: true,
-        isDarkMode: true,
-        stealthMode: false,
         maxBots: 50,
         botJoinDelay: 1000
     };
 
-    let state = {
+    const state = {
         isAltSPressed: false,
         isAltHPressed: false,
         isAltRPressed: false,
@@ -54,38 +50,28 @@
         websocket: null
     };
 
-    // Color Schemes
-    const colors = {
-        dark: {
-            primary: '#0d0d1a',
-            secondary: '#12122b',
-            accent: '#1a1a4a',
-            text: '#e6e6ff',
-            correct: '#00ff88',
-            incorrect: '#ff3860',
-            close: '#ff3860',
-            minimize: '#7f7fff',
-            bot: '#00ffff',
-            host: '#ff00ff',
-            hoverGlow: '0 0 8px rgba(100, 220, 255, 0.5)',
-            particleColors: ['#00ffff', '#ff00ff', '#ffff00']
+    // Neon Color Scheme
+    const neon = {
+        primary: '#0a0a15',
+        secondary: '#0f0f25',
+        accent: '#1a1a4a',
+        text: '#e6e6ff',
+        correct: '#00ff88',
+        incorrect: '#ff3860',
+        close: '#ff3860',
+        minimize: '#7f7fff',
+        bot: '#00ffff',
+        host: '#ff00ff',
+        glow: {
+            correct: '0 0 15px #00ff88, 0 0 30px #00ff8840',
+            incorrect: '0 0 15px #ff3860, 0 0 30px #ff386040',
+            primary: '0 0 10px #1a1a4a',
+            accent: '0 0 15px #7f7fff'
         },
-        light: {
-            primary: '#f0f0f5',
-            secondary: '#e0e0ef',
-            accent: '#c0c0df',
-            text: '#333344',
-            correct: '#00aa55',
-            incorrect: '#ff1133',
-            close: '#ff1133',
-            minimize: '#5f5faf',
-            bot: '#0088ff',
-            host: '#cc00ff'
-        }
+        particles: ['#00ffff', '#ff00ff', '#ffff00', '#ff0080', '#8000ff']
     };
 
-    let currentColors = colors.dark;
-    let uiElement, content, contentWrapper;
+    let uiElement, contentWrapper;
 
     // ======================
     // CORE FUNCTIONS
@@ -100,15 +86,15 @@
         return null;
     }
 
-    function createParticles(element, count = 5) {
+    function createParticles(element, count = 5, sizeMultiplier = 1) {
         const rect = element.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
         
         for (let i = 0; i < count; i++) {
             const particle = document.createElement('div');
-            const size = Math.random() * 4 + 2;
-            const color = currentColors.particleColors[Math.floor(Math.random() * currentColors.particleColors.length)];
+            const size = (Math.random() * 4 + 2) * sizeMultiplier;
+            const color = neon.particles[Math.floor(Math.random() * neon.particles.length)];
             
             Object.assign(particle.style, {
                 position: 'fixed',
@@ -122,13 +108,14 @@
                 top: `${centerY}px`,
                 opacity: '0.8',
                 transform: 'translate(-50%, -50%)',
-                willChange: 'transform, opacity'
+                willChange: 'transform, opacity',
+                filter: 'blur(1px)'
             });
             
             document.body.appendChild(particle);
             
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 20 + 10;
+            const distance = Math.random() * 20 * sizeMultiplier + 10;
             const duration = Math.random() * 600 + 400;
             
             const startTime = Date.now();
@@ -166,8 +153,11 @@
             buttons.forEach(button => {
                 if (button) {
                     const hue = Math.floor(Math.random() * 360);
-                    button.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
-                    button.style.transition = `background-color ${settings.rainbowSpeed/1000}s ease`;
+                    button.style.cssText = `
+                        background-color: hsl(${hue}, 100%, 50%) !important;
+                        transition: background-color ${settings.rainbowSpeed/1000}s ease !important;
+                        box-shadow: 0 0 10px hsl(${hue}, 100%, 50%) !important;
+                    `;
                 }
             });
         }
@@ -192,6 +182,7 @@
             if (button) {
                 button.style.removeProperty('background-color');
                 button.style.removeProperty('transition');
+                button.style.removeProperty('box-shadow');
             }
         });
     }
@@ -221,8 +212,8 @@
         const gamePin = prompt('Enter game PIN for bots:');
         if (!gamePin) return;
         
-        const botCount = parseInt(prompt('How many bots? (Max 50)', '10'));
-        if (isNaN(botCount) || botCount < 1 || botCount > 50) {
+        const botCount = Math.min(settings.maxBots, parseInt(prompt('How many bots? (Max 50)', '10')) || 0);
+        if (botCount < 1) {
             alert('Invalid number!');
             return;
         }
@@ -277,13 +268,13 @@
             left: '20px',
             width: '350px',
             maxHeight: '70vh',
-            backgroundColor: currentColors.primary,
+            backgroundColor: neon.primary,
             borderRadius: '10px',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+            boxShadow: neon.glow.primary,
             zIndex: '9999',
             overflow: 'hidden',
-            border: `1px solid ${currentColors.accent}`,
-            transition: 'opacity 0.3s ease',
+            border: `1px solid ${neon.accent}`,
+            transition: 'opacity 0.3s ease, transform 0.2s ease',
             willChange: 'transform'
         });
 
@@ -291,20 +282,22 @@
         const handle = document.createElement('div');
         Object.assign(handle.style, {
             padding: '12px 15px',
-            backgroundColor: currentColors.secondary,
-            color: currentColors.text,
+            backgroundColor: neon.secondary,
+            color: neon.text,
             cursor: 'move',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
             userSelect: 'none',
-            borderBottom: `1px solid ${currentColors.accent}`
+            borderBottom: `1px solid ${neon.accent}`,
+            boxShadow: neon.glow.accent
         });
 
         const title = document.createElement('div');
-        title.textContent = 'KaHack! Ultimate';
+        title.textContent = 'KaHack! Neon';
         title.style.fontWeight = 'bold';
         title.style.fontSize = '16px';
+        title.style.textShadow = '0 0 10px #7f7fff';
 
         // Minimize Button
         const minimizeButton = document.createElement('div');
@@ -312,15 +305,16 @@
         Object.assign(minimizeButton.style, {
             width: '24px',
             height: '24px',
-            backgroundColor: currentColors.minimize,
-            color: currentColors.text,
+            backgroundColor: neon.minimize,
+            color: neon.text,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             borderRadius: '4px',
             cursor: 'pointer',
             fontSize: '14px',
-            transition: 'transform 0.2s ease'
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 5px #7f7fff'
         });
 
         // Close Button
@@ -329,20 +323,21 @@
         Object.assign(closeButton.style, {
             width: '24px',
             height: '24px',
-            backgroundColor: currentColors.close,
-            color: currentColors.text,
+            backgroundColor: neon.close,
+            color: neon.text,
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             borderRadius: '4px',
             cursor: 'pointer',
-            transition: 'transform 0.2s ease'
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 5px #ff3860'
         });
 
         // Button Events
         minimizeButton.addEventListener('click', function() {
             contentWrapper.style.display = contentWrapper.style.display === 'none' ? 'block' : 'none';
-            createParticles(minimizeButton, 5);
+            createParticles(minimizeButton, 8, 1.5);
         });
 
         closeButton.addEventListener('click', function() {
@@ -350,7 +345,7 @@
             settings.autoAnswer = false;
             settings.showAnswers = false;
             stopRainbowEffect();
-            createParticles(closeButton, 5);
+            createParticles(closeButton, 10, 1.5);
         });
 
         // Dragging Functionality
@@ -359,6 +354,7 @@
             state.dragOffsetX = e.clientX - uiElement.getBoundingClientRect().left;
             state.dragOffsetY = e.clientY - uiElement.getBoundingClientRect().top;
             document.body.style.userSelect = 'none';
+            uiElement.style.transform = 'scale(0.98)';
             e.preventDefault();
         });
 
@@ -373,8 +369,12 @@
         });
 
         document.addEventListener('mouseup', function() {
-            state.isDragging = false;
-            document.body.style.userSelect = '';
+            if (state.isDragging) {
+                state.isDragging = false;
+                document.body.style.userSelect = '';
+                uiElement.style.transform = 'scale(1)';
+                createParticles(uiElement, 15, 1.2);
+            }
         });
 
         // Assemble Header
@@ -397,13 +397,13 @@
         });
 
         // Create Content Container
-        content = document.createElement('div');
+        const content = document.createElement('div');
         Object.assign(content.style, {
             padding: '15px',
             display: 'flex',
             flexDirection: 'column',
             gap: '15px',
-            backgroundColor: currentColors.primary
+            backgroundColor: neon.primary
         });
 
         // Quiz ID Section
@@ -442,8 +442,9 @@
 
         const pointsLabel = document.createElement('span');
         pointsLabel.textContent = settings.PPT;
-        pointsLabel.style.color = currentColors.text;
+        pointsLabel.style.color = neon.text;
         pointsLabel.style.minWidth = '40px';
+        pointsLabel.style.textShadow = '0 0 5px #7f7fff';
 
         pointsSlider.addEventListener('input', function() {
             settings.PPT = +this.value;
@@ -460,7 +461,6 @@
         
         answeringSection.appendChild(createToggle('Auto Answer', settings.autoAnswer, function(checked) {
             settings.autoAnswer = checked;
-            info.ILSetQuestion = info.questionNum;
             optimizePerformance();
         }));
 
@@ -491,8 +491,9 @@
 
         const rainbowLabel = document.createElement('span');
         rainbowLabel.textContent = settings.rainbowSpeed + 'ms';
-        rainbowLabel.style.color = currentColors.text;
+        rainbowLabel.style.color = neon.text;
         rainbowLabel.style.minWidth = '50px';
+        rainbowLabel.style.textShadow = '0 0 5px #7f7fff';
 
         rainbowSlider.addEventListener('input', function() {
             settings.rainbowSpeed = +this.value;
@@ -508,12 +509,13 @@
             width: '100%',
             padding: '8px',
             marginTop: '10px',
-            backgroundColor: currentColors.accent,
-            color: currentColors.text,
+            backgroundColor: neon.accent,
+            color: neon.text,
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            transition: 'transform 0.2s ease'
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #7f7fff'
         });
         
         rainbowButton.addEventListener('click', function() {
@@ -524,7 +526,7 @@
                 startRainbowEffect();
                 rainbowButton.textContent = 'Disable Rainbow';
             }
-            createParticles(rainbowButton, 5);
+            createParticles(rainbowButton, 10, 1.2);
         });
         
         rainbowContainer.appendChild(rainbowSlider);
@@ -541,13 +543,14 @@
         Object.assign(botButton.style, {
             width: '100%',
             padding: '8px',
-            backgroundColor: currentColors.bot,
+            backgroundColor: neon.bot,
             color: '#000',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
             marginBottom: '10px',
-            transition: 'transform 0.2s ease'
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #00ffff'
         });
         botButton.addEventListener('click', startMassJoin);
         botButton.addEventListener('mouseenter', () => botButton.style.transform = 'scale(1.02)');
@@ -559,12 +562,13 @@
         Object.assign(hostButton.style, {
             width: '100%',
             padding: '8px',
-            backgroundColor: currentColors.host,
+            backgroundColor: neon.host,
             color: '#000',
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            transition: 'transform 0.2s ease'
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #ff00ff'
         });
         hostButton.addEventListener('click', sniffHostToken);
         hostButton.addEventListener('mouseenter', () => hostButton.style.transform = 'scale(1.02)');
@@ -576,7 +580,7 @@
         // Keybinds Section
         const keybindsSection = createSection('KEYBINDS');
         const keybindsList = document.createElement('div');
-        keybindsList.style.color = currentColors.text;
+        keybindsList.style.color = neon.text;
         keybindsList.style.fontSize = '13px';
         keybindsList.style.lineHeight = '1.5';
         
@@ -598,6 +602,7 @@
             const keyElem = document.createElement('span');
             keyElem.textContent = key;
             keyElem.style.fontWeight = 'bold';
+            keyElem.style.textShadow = '0 0 5px #7f7fff';
             
             const descElem = document.createElement('span');
             descElem.textContent = desc;
@@ -629,18 +634,29 @@
     function createSection(titleText) {
         const section = document.createElement('div');
         Object.assign(section.style, {
-            backgroundColor: currentColors.secondary,
+            backgroundColor: neon.secondary,
             borderRadius: '8px',
             padding: '12px',
-            border: `1px solid ${currentColors.accent}`
+            border: `1px solid ${neon.accent}`,
+            transition: 'transform 0.2s ease',
+            boxShadow: neon.glow.accent
+        });
+
+        section.addEventListener('mouseenter', () => {
+            section.style.transform = 'translateY(-2px)';
+            createParticles(section, 3);
+        });
+        section.addEventListener('mouseleave', () => {
+            section.style.transform = 'translateY(0)';
         });
 
         const header = document.createElement('h3');
         header.textContent = titleText;
         Object.assign(header.style, {
             margin: '0 0 10px 0',
-            color: currentColors.text,
-            fontSize: '16px'
+            color: neon.text,
+            fontSize: '16px',
+            textShadow: '0 0 5px #7f7fff'
         });
 
         section.appendChild(header);
@@ -658,8 +674,9 @@
 
         const label = document.createElement('span');
         label.textContent = labelText;
-        label.style.color = currentColors.text;
+        label.style.color = neon.text;
         label.style.fontSize = '14px';
+        label.style.textShadow = '0 0 5px #7f7fff';
 
         const toggle = document.createElement('label');
         Object.assign(toggle.style, {
@@ -686,9 +703,10 @@
             left: '0',
             right: '0',
             bottom: '0',
-            backgroundColor: checked ? currentColors.correct : currentColors.incorrect,
+            backgroundColor: checked ? neon.correct : neon.incorrect,
             transition: '.4s',
-            borderRadius: '24px'
+            borderRadius: '24px',
+            boxShadow: checked ? neon.glow.correct : neon.glow.incorrect
         });
 
         const sliderBefore = document.createElement('span');
@@ -701,14 +719,16 @@
             bottom: '4px',
             backgroundColor: '#fff',
             transition: '.4s',
-            borderRadius: '50%'
+            borderRadius: '50%',
+            boxShadow: '0 0 5px rgba(0,0,0,0.3)'
         });
 
         input.addEventListener('change', function() {
             onChange(this.checked);
-            slider.style.backgroundColor = this.checked ? currentColors.correct : currentColors.incorrect;
+            slider.style.backgroundColor = this.checked ? neon.correct : neon.incorrect;
+            slider.style.boxShadow = this.checked ? neon.glow.correct : neon.glow.incorrect;
             sliderBefore.style.left = this.checked ? '26px' : '4px';
-            createParticles(slider, 3);
+            createParticles(slider, 5);
         });
 
         toggle.appendChild(input);
@@ -723,7 +743,8 @@
     function createStatElement(text) {
         const el = document.createElement('div');
         el.textContent = text;
-        el.style.color = currentColors.text;
+        el.style.color = neon.text;
+        el.style.textShadow = '0 0 5px #7f7fff';
         el.id = 'stat-' + text.split(':')[0].toLowerCase().trim().replace(' ', '-');
         return el;
     }
@@ -740,12 +761,21 @@
         stats.forEach(stat => {
             const id = 'stat-' + stat.split(':')[0].toLowerCase().trim().replace(' ', '-');
             const el = document.getElementById(id);
-            if (el) el.textContent = stat;
+            if (el) {
+                el.textContent = stat;
+                if (id.includes('host-token') && info.hostToken) {
+                    el.style.color = neon.host;
+                    el.style.textShadow = '0 0 10px #ff00ff';
+                } else if (id.includes('active-bots') && info.botCount > 0) {
+                    el.style.color = neon.bot;
+                    el.style.textShadow = '0 0 10px #00ffff';
+                }
+            }
         });
     }
 
     // ======================
-    // MAIN FUNCTIONALITY
+    // QUIZ FUNCTIONS
     // ======================
 
     function handleInputChange() {
@@ -768,16 +798,16 @@
                 return response.json();
             })
             .then(data => {
-                inputBox.style.backgroundColor = currentColors.correct;
-                inputBox.style.boxShadow = currentColors.hoverGlow;
+                inputBox.style.backgroundColor = neon.correct;
+                inputBox.style.boxShadow = neon.glow.correct;
                 questions = parseQuestions(data.questions);
                 info.numQuestions = questions.length;
                 updateStats();
-                createParticles(inputBox, 8);
+                createParticles(inputBox, 10, 1.5);
             })
             .catch(() => {
-                inputBox.style.backgroundColor = currentColors.incorrect;
-                inputBox.style.boxShadow = `0 0 10px ${currentColors.incorrect}`;
+                inputBox.style.backgroundColor = neon.incorrect;
+                inputBox.style.boxShadow = neon.glow.incorrect;
                 info.numQuestions = 0;
                 updateStats();
             });
@@ -811,14 +841,20 @@
         );
         
         answerButtons.forEach(button => {
-            if (button) button.style.removeProperty('background-color');
+            if (button) {
+                button.style.removeProperty('background-color');
+                button.style.removeProperty('box-shadow');
+            }
         });
         
         if (question.answers) {
             question.answers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
                           FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
-                if (btn) btn.style.backgroundColor = currentColors.correct;
+                if (btn) {
+                    btn.style.backgroundColor = neon.correct;
+                    btn.style.boxShadow = neon.glow.correct;
+                }
             });
         }
     }
@@ -887,31 +923,44 @@
         const style = document.createElement('style');
         style.textContent = `
             .kahack-ui {
-                font-family: Arial, sans-serif;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             input[type="range"] {
+                -webkit-appearance: none;
                 width: 100%;
+                height: 6px;
+                background: #555;
+                border-radius: 3px;
+                outline: none;
+            }
+            input[type="range"]::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                width: 16px;
+                height: 16px;
+                background: #333;
+                border-radius: 50%;
+                cursor: pointer;
+                box-shadow: 0 0 5px #7f7fff;
+            }
+            input[type="text"] {
+                transition: all 0.3s ease;
+            }
+            input[type="text"]:focus {
+                outline: none;
             }
             button {
-                transition: background-color 0.2s;
-            }
-            #stat-host-token {
-                color: ${currentColors.host};
-                font-weight: bold;
-            }
-            #stat-active-bots {
-                color: ${currentColors.bot};
-                font-weight: bold;
+                transition: all 0.2s ease;
             }
             .kahack-ui::-webkit-scrollbar {
                 width: 6px;
             }
             .kahack-ui::-webkit-scrollbar-track {
-                background: ${currentColors.primary};
+                background: ${neon.primary};
             }
             .kahack-ui::-webkit-scrollbar-thumb {
-                background: ${currentColors.accent};
+                background: ${neon.accent};
                 border-radius: 3px;
+                box-shadow: ${neon.glow.accent};
             }
         `;
         document.head.appendChild(style);
@@ -927,6 +976,7 @@
                 state.isAltHPressed = !state.isAltHPressed;
                 uiElement.style.opacity = state.isAltHPressed ? '0' : '1';
                 uiElement.style.pointerEvents = state.isAltHPressed ? 'none' : 'auto';
+                createParticles(uiElement, 15, 1.5);
             }
             
             // SHIFT - Quick hide/show
