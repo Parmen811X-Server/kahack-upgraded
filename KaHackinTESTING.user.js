@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         KaHack! Ultimate Edition
-// @version      6.0.0
+// @version      6.1.0
 // @namespace    https://github.com/jokeri2222
-// @description  Advanced Kahoot hack with bot joining and host control
+// @description  Advanced Kahoot hack with scrollable UI and bot features
 // @match        https://kahoot.it/*
 // @grant        none
 // ==/UserScript==
@@ -13,7 +13,7 @@
     // ======================
     // CORE CONFIGURATION
     // ======================
-    const Version = '6.0.0';
+    const Version = '6.1.0';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -24,7 +24,8 @@
         totalCorrect: 0,
         totalAnswered: 0,
         botCount: 0,
-        hostToken: null
+        hostToken: null,
+        ILSetQuestion: -1
     };
 
     let settings = {
@@ -65,7 +66,9 @@
             close: '#ff3860',
             minimize: '#7f7fff',
             bot: '#00ffff',
-            host: '#ff00ff'
+            host: '#ff00ff',
+            hoverGlow: '0 0 8px rgba(100, 220, 255, 0.5)',
+            particleColors: ['#00ffff', '#ff00ff', '#ffff00']
         },
         light: {
             primary: '#f0f0f5',
@@ -82,7 +85,7 @@
     };
 
     let currentColors = colors.dark;
-    let uiElement, content;
+    let uiElement, content, contentWrapper;
 
     // ======================
     // CORE FUNCTIONS
@@ -95,6 +98,61 @@
             if (All[i].getAttribute(attribute) === value) return All[i];
         }
         return null;
+    }
+
+    function createParticles(element, count = 5) {
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            const size = Math.random() * 4 + 2;
+            const color = currentColors.particleColors[Math.floor(Math.random() * currentColors.particleColors.length)];
+            
+            Object.assign(particle.style, {
+                position: 'fixed',
+                width: `${size}px`,
+                height: `${size}px`,
+                backgroundColor: color,
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: '10000',
+                left: `${centerX}px`,
+                top: `${centerY}px`,
+                opacity: '0.8',
+                transform: 'translate(-50%, -50%)',
+                willChange: 'transform, opacity'
+            });
+            
+            document.body.appendChild(particle);
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 20 + 10;
+            const duration = Math.random() * 600 + 400;
+            
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                
+                if (progress >= 1) {
+                    particle.remove();
+                    return;
+                }
+                
+                const x = centerX + Math.cos(angle) * distance * progress;
+                const y = centerY + Math.sin(angle) * distance * progress;
+                
+                particle.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+                particle.style.opacity = 0.8 * (1 - progress);
+                
+                requestAnimationFrame(animate);
+            }
+            
+            requestAnimationFrame(animate);
+        }
     }
 
     function startRainbowEffect() {
@@ -184,7 +242,6 @@
             return;
         }
         
-        // Listen for WebSocket connections
         const origWebSocket = window.WebSocket;
         window.WebSocket = function(...args) {
             const ws = new origWebSocket(...args);
@@ -207,29 +264,6 @@
         alert('Host token sniffer activated! Join a game as player.');
     }
 
-    function sendHostCommand(command, data = {}) {
-        if (!info.hostToken) {
-            alert('No host token found!');
-            return;
-        }
-        
-        const message = {
-            channel: "/service/controller",
-            data: {
-                type: command,
-                gameid: window.location.href.match(/\/\/(?:[^\/]+)\/lobby\?quizId=([^&]+)/)?.[1],
-                ...data
-            },
-            clientId: info.hostToken
-        };
-        
-        if (state.websocket) {
-            state.websocket.send(JSON.stringify(message));
-        } else {
-            alert('WebSocket connection not found!');
-        }
-    }
-
     // ======================
     // UI FUNCTIONS
     // ======================
@@ -241,7 +275,8 @@
             position: 'fixed',
             top: '20px',
             left: '20px',
-            width: '380px',
+            width: '350px',
+            maxHeight: '70vh',
             backgroundColor: currentColors.primary,
             borderRadius: '10px',
             boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
@@ -284,7 +319,8 @@
             alignItems: 'center',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px'
+            fontSize: '14px',
+            transition: 'transform 0.2s ease'
         });
 
         // Close Button
@@ -299,12 +335,14 @@
             justifyContent: 'center',
             alignItems: 'center',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease'
         });
 
         // Button Events
         minimizeButton.addEventListener('click', function() {
-            content.style.display = content.style.display === 'none' ? 'flex' : 'none';
+            contentWrapper.style.display = contentWrapper.style.display === 'none' ? 'block' : 'none';
+            createParticles(minimizeButton, 5);
         });
 
         closeButton.addEventListener('click', function() {
@@ -312,6 +350,7 @@
             settings.autoAnswer = false;
             settings.showAnswers = false;
             stopRainbowEffect();
+            createParticles(closeButton, 5);
         });
 
         // Dragging Functionality
@@ -320,15 +359,16 @@
             state.dragOffsetX = e.clientX - uiElement.getBoundingClientRect().left;
             state.dragOffsetY = e.clientY - uiElement.getBoundingClientRect().top;
             document.body.style.userSelect = 'none';
+            e.preventDefault();
         });
 
         document.addEventListener('mousemove', function(e) {
             if (state.isDragging) {
-                const x = e.clientX - state.dragOffsetX;
-                const y = e.clientY - state.dragOffsetY;
+                const x = Math.max(10, Math.min(window.innerWidth - uiElement.offsetWidth - 10, e.clientX - state.dragOffsetX));
+                const y = Math.max(10, Math.min(window.innerHeight - uiElement.offsetHeight - 10, e.clientY - state.dragOffsetY));
                 
-                uiElement.style.left = `${Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, x))}px`;
-                uiElement.style.top = `${Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, y))}px`;
+                uiElement.style.left = `${x}px`;
+                uiElement.style.top = `${y}px`;
             }
         });
 
@@ -347,6 +387,14 @@
         handle.appendChild(title);
         handle.appendChild(buttonContainer);
         uiElement.appendChild(handle);
+
+        // Create scrollable content wrapper
+        contentWrapper = document.createElement('div');
+        Object.assign(contentWrapper.style, {
+            maxHeight: 'calc(70vh - 50px)',
+            overflowY: 'auto',
+            scrollbarWidth: 'thin'
+        });
 
         // Create Content Container
         content = document.createElement('div');
@@ -412,6 +460,7 @@
         
         answeringSection.appendChild(createToggle('Auto Answer', settings.autoAnswer, function(checked) {
             settings.autoAnswer = checked;
+            info.ILSetQuestion = info.questionNum;
             optimizePerformance();
         }));
 
@@ -463,7 +512,8 @@
             color: currentColors.text,
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease'
         });
         
         rainbowButton.addEventListener('click', function() {
@@ -474,6 +524,7 @@
                 startRainbowEffect();
                 rainbowButton.textContent = 'Disable Rainbow';
             }
+            createParticles(rainbowButton, 5);
         });
         
         rainbowContainer.appendChild(rainbowSlider);
@@ -495,9 +546,12 @@
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
-            marginBottom: '10px'
+            marginBottom: '10px',
+            transition: 'transform 0.2s ease'
         });
         botButton.addEventListener('click', startMassJoin);
+        botButton.addEventListener('mouseenter', () => botButton.style.transform = 'scale(1.02)');
+        botButton.addEventListener('mouseleave', () => botButton.style.transform = 'scale(1)');
         botSection.appendChild(botButton);
 
         const hostButton = document.createElement('button');
@@ -509,9 +563,12 @@
             color: '#000',
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease'
         });
         hostButton.addEventListener('click', sniffHostToken);
+        hostButton.addEventListener('mouseenter', () => hostButton.style.transform = 'scale(1.02)');
+        hostButton.addEventListener('mouseleave', () => hostButton.style.transform = 'scale(1)');
         botSection.appendChild(hostButton);
 
         content.appendChild(botSection);
@@ -565,7 +622,8 @@
         content.appendChild(statsSection);
 
         // Final Assembly
-        uiElement.appendChild(content);
+        contentWrapper.appendChild(content);
+        uiElement.appendChild(contentWrapper);
     }
 
     function createSection(titleText) {
@@ -650,6 +708,7 @@
             onChange(this.checked);
             slider.style.backgroundColor = this.checked ? currentColors.correct : currentColors.incorrect;
             sliderBefore.style.left = this.checked ? '26px' : '4px';
+            createParticles(slider, 3);
         });
 
         toggle.appendChild(input);
@@ -665,7 +724,7 @@
         const el = document.createElement('div');
         el.textContent = text;
         el.style.color = currentColors.text;
-        el.id = 'stat-' + text.split(':')[0].toLowerCase().trim();
+        el.id = 'stat-' + text.split(':')[0].toLowerCase().trim().replace(' ', '-');
         return el;
     }
 
@@ -679,7 +738,7 @@
         ];
         
         stats.forEach(stat => {
-            const id = 'stat-' + stat.split(':')[0].toLowerCase().trim();
+            const id = 'stat-' + stat.split(':')[0].toLowerCase().trim().replace(' ', '-');
             const el = document.getElementById(id);
             if (el) el.textContent = stat;
         });
@@ -710,10 +769,11 @@
             })
             .then(data => {
                 inputBox.style.backgroundColor = currentColors.correct;
-                inputBox.style.boxShadow = `0 0 10px ${currentColors.correct}`;
+                inputBox.style.boxShadow = currentColors.hoverGlow;
                 questions = parseQuestions(data.questions);
                 info.numQuestions = questions.length;
                 updateStats();
+                createParticles(inputBox, 8);
             })
             .catch(() => {
                 inputBox.style.backgroundColor = currentColors.incorrect;
@@ -835,13 +895,23 @@
             button {
                 transition: background-color 0.2s;
             }
-            #stat-host {
+            #stat-host-token {
                 color: ${currentColors.host};
                 font-weight: bold;
             }
-            #stat-bots {
+            #stat-active-bots {
                 color: ${currentColors.bot};
                 font-weight: bold;
+            }
+            .kahack-ui::-webkit-scrollbar {
+                width: 6px;
+            }
+            .kahack-ui::-webkit-scrollbar-track {
+                background: ${currentColors.primary};
+            }
+            .kahack-ui::-webkit-scrollbar-thumb {
+                background: ${currentColors.accent};
+                border-radius: 3px;
             }
         `;
         document.head.appendChild(style);
