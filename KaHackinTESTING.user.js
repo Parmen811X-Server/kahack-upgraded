@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         KaHack! Complete Working
-// @version      5.0.1
+// @name         KaHack! Fully Functional
+// @version      5.0.2
 // @namespace    https://github.com/jokeri2222
 // @description  Complete working Kahoot hack with all features
 // @match        https://kahoot.it/*
@@ -13,52 +13,38 @@
     // ======================
     // CORE CONFIGURATION
     // ======================
-    const Version = '5.0.1';
+    const Version = '5.0.2';
     let questions = [];
     const info = {
         numQuestions: 0,
         questionNum: -1,
         lastAnsweredQuestion: -1,
-        defaultIL: true,
-        ILSetQuestion: -1,
         streak: 0,
         highestStreak: 0,
         totalCorrect: 0,
-        totalAnswered: 0,
-        sessionStart: new Date()
+        totalAnswered: 0
     };
 
-    // Settings with defaults
     let settings = {
         PPT: 950,
-        Answered_PPT: 950,
         autoAnswer: false,
         showAnswers: false,
         inputLag: 100,
         rainbowSpeed: 300,
         isSoundEnabled: true,
         isDarkMode: true,
-        stealthMode: false,
-        autoJoin: {
-            enabled: false,
-            pin: '',
-            nickname: 'KaHackUser'
-        }
+        stealthMode: false
     };
 
-    // State tracking
     let state = {
         isAltSPressed: false,
         isAltHPressed: false,
         isAltRPressed: false,
         rainbowInterval: null,
         mainInterval: null,
-        answerHistory: [],
-        sessionStats: {
-            pointsEarned: 0,
-            streaks: [],
-            answerTimes: []
-        }
+        isDragging: false,
+        dragOffsetX: 0,
+        dragOffsetY: 0
     };
 
     // Color Schemes
@@ -71,10 +57,7 @@
             correct: '#00ff88',
             incorrect: '#ff3860',
             close: '#ff3860',
-            minimize: '#7f7fff',
-            hoverGlow: '0 0 8px rgba(100, 220, 255, 0.5)',
-            rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
-            particleColors: ['#00ffff', '#ff00ff', '#ffff00']
+            minimize: '#7f7fff'
         },
         light: {
             primary: '#f0f0f5',
@@ -84,10 +67,7 @@
             correct: '#00aa55',
             incorrect: '#ff1133',
             close: '#ff1133',
-            minimize: '#5f5faf',
-            hoverGlow: '0 0 8px rgba(0, 100, 200, 0.3)',
-            rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
-            particleColors: ['#00aaff', '#ff00aa', '#ffaa00']
+            minimize: '#5f5faf'
         }
     };
 
@@ -117,11 +97,9 @@
             
             buttons.forEach(button => {
                 if (button) {
-                    const randomColor = currentColors.rainbow[Math.floor(Math.random() * currentColors.rainbow.length)];
-                    button.style.cssText = `
-                        background-color: ${randomColor} !important;
-                        transition: background-color ${settings.rainbowSpeed/1000}s ease !important;
-                    `;
+                    const hue = Math.floor(Math.random() * 360);
+                    button.style.backgroundColor = `hsl(${hue}, 100%, 50%)`;
+                    button.style.transition = `background-color ${settings.rainbowSpeed/1000}s ease`;
                 }
             });
         }
@@ -151,7 +129,7 @@
     }
 
     // ======================
-    // UI CREATION
+    // UI FUNCTIONS
     // ======================
 
     function createUI() {
@@ -183,18 +161,13 @@
             justifyContent: 'space-between',
             alignItems: 'center',
             userSelect: 'none',
-            borderBottom: `1px solid ${currentColors.accent}`,
-            WebkitUserSelect: 'none'
+            borderBottom: `1px solid ${currentColors.accent}`
         });
 
         const title = document.createElement('div');
-        title.textContent = 'KaHack! Complete';
+        title.textContent = 'KaHack!';
         title.style.fontWeight = 'bold';
         title.style.fontSize = '16px';
-
-        const buttonContainer = document.createElement('div');
-        buttonContainer.style.display = 'flex';
-        buttonContainer.style.gap = '5px';
 
         // Minimize Button
         const minimizeButton = document.createElement('div');
@@ -209,8 +182,7 @@
             alignItems: 'center',
             borderRadius: '4px',
             cursor: 'pointer',
-            fontSize: '14px',
-            transition: 'transform 0.2s ease'
+            fontSize: '14px'
         });
 
         // Close Button
@@ -225,20 +197,10 @@
             justifyContent: 'center',
             alignItems: 'center',
             borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease'
+            cursor: 'pointer'
         });
 
         // Button Events
-        [minimizeButton, closeButton].forEach(btn => {
-            btn.addEventListener('mouseenter', () => {
-                btn.style.transform = 'scale(1.1)';
-            });
-            btn.addEventListener('mouseleave', () => {
-                btn.style.transform = 'scale(1)';
-            });
-        });
-
         minimizeButton.addEventListener('click', function() {
             content.style.display = content.style.display === 'none' ? 'flex' : 'none';
         });
@@ -250,13 +212,41 @@
             stopRainbowEffect();
         });
 
+        // Dragging Functionality
+        handle.addEventListener('mousedown', function(e) {
+            state.isDragging = true;
+            state.dragOffsetX = e.clientX - uiElement.getBoundingClientRect().left;
+            state.dragOffsetY = e.clientY - uiElement.getBoundingClientRect().top;
+            document.body.style.userSelect = 'none';
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (state.isDragging) {
+                const x = e.clientX - state.dragOffsetX;
+                const y = e.clientY - state.dragOffsetY;
+                
+                uiElement.style.left = `${Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, x))}px`;
+                uiElement.style.top = `${Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, y))}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            state.isDragging = false;
+            document.body.style.userSelect = '';
+        });
+
+        // Assemble Header
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '5px';
         buttonContainer.appendChild(minimizeButton);
         buttonContainer.appendChild(closeButton);
+        
         handle.appendChild(title);
         handle.appendChild(buttonContainer);
         uiElement.appendChild(handle);
 
-        // Content Container
+        // Create Content Container
         content = document.createElement('div');
         Object.assign(content.style, {
             padding: '15px',
@@ -276,8 +266,7 @@
             border: '1px solid #555',
             backgroundColor: '#fff',
             color: '#000',
-            fontSize: '14px',
-            transition: 'box-shadow 0.3s ease'
+            fontSize: '14px'
         });
         inputBox.placeholder = 'Enter Quiz ID...';
         inputBox.addEventListener('input', handleInputChange);
@@ -297,14 +286,13 @@
         pointsSlider.type = 'range';
         pointsSlider.min = '500';
         pointsSlider.max = '1000';
-        pointsSlider.value = '950';
+        pointsSlider.value = settings.PPT;
         pointsSlider.style.flex = '1';
 
         const pointsLabel = document.createElement('span');
-        pointsLabel.textContent = '950';
+        pointsLabel.textContent = settings.PPT;
         pointsLabel.style.color = currentColors.text;
         pointsLabel.style.minWidth = '40px';
-        pointsLabel.style.textAlign = 'center';
 
         pointsSlider.addEventListener('input', function() {
             settings.PPT = +this.value;
@@ -321,7 +309,6 @@
         
         answeringSection.appendChild(createToggle('Auto Answer', settings.autoAnswer, function(checked) {
             settings.autoAnswer = checked;
-            info.ILSetQuestion = info.questionNum;
             optimizePerformance();
         }));
 
@@ -347,14 +334,13 @@
         rainbowSlider.type = 'range';
         rainbowSlider.min = '50';
         rainbowSlider.max = '1000';
-        rainbowSlider.value = '300';
+        rainbowSlider.value = settings.rainbowSpeed;
         rainbowSlider.style.flex = '1';
 
         const rainbowLabel = document.createElement('span');
-        rainbowLabel.textContent = '300ms';
+        rainbowLabel.textContent = settings.rainbowSpeed + 'ms';
         rainbowLabel.style.color = currentColors.text;
         rainbowLabel.style.minWidth = '50px';
-        rainbowLabel.style.textAlign = 'center';
 
         rainbowSlider.addEventListener('input', function() {
             settings.rainbowSpeed = +this.value;
@@ -374,8 +360,7 @@
             color: currentColors.text,
             border: 'none',
             borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease'
+            cursor: 'pointer'
         });
         
         rainbowButton.addEventListener('click', function() {
@@ -438,27 +423,6 @@
         
         content.appendChild(statsSection);
 
-        // Settings Section
-        const settingsSection = createSection('SETTINGS');
-        
-        settingsSection.appendChild(createToggle('Dark Mode', settings.isDarkMode, function(checked) {
-            settings.isDarkMode = checked;
-            currentColors = checked ? colors.dark : colors.light;
-            updateUITheme();
-        }));
-
-        settingsSection.appendChild(createToggle('Stealth Mode', settings.stealthMode, function(checked) {
-            settings.stealthMode = checked;
-            optimizePerformance();
-        }));
-
-        content.appendChild(settingsSection);
-
-        // Version Info
-        const versionSection = createSection('INFO');
-        versionSection.appendChild(createStatElement('Version: ' + Version));
-        content.appendChild(versionSection);
-
         // Final Assembly
         uiElement.appendChild(content);
     }
@@ -469,8 +433,7 @@
             backgroundColor: currentColors.secondary,
             borderRadius: '8px',
             padding: '12px',
-            border: `1px solid ${currentColors.accent}`,
-            transition: 'transform 0.2s ease'
+            border: `1px solid ${currentColors.accent}`
         });
 
         const header = document.createElement('h3');
@@ -564,33 +527,6 @@
         return el;
     }
 
-    function updateUITheme() {
-        if (!uiElement) return;
-
-        uiElement.style.backgroundColor = currentColors.primary;
-        uiElement.style.borderColor = currentColors.accent;
-
-        const headers = document.querySelectorAll('.kahack-header');
-        headers.forEach(header => {
-            header.style.backgroundColor = currentColors.secondary;
-            header.style.borderBottomColor = currentColors.accent;
-            header.style.color = currentColors.text;
-        });
-
-        const sections = document.querySelectorAll('.kahack-content > div');
-        sections.forEach(section => {
-            section.style.backgroundColor = currentColors.secondary;
-            section.style.borderColor = currentColors.accent;
-        });
-
-        const textElements = document.querySelectorAll('[style*="color"]');
-        textElements.forEach(el => {
-            if (el.style.color.includes('text')) {
-                el.style.color = currentColors.text;
-            }
-        });
-    }
-
     // ======================
     // MAIN FUNCTIONALITY
     // ======================
@@ -607,31 +543,30 @@
             return;
         }
         
-        fetch('https://kahoot.it/rest/kahoots/' + quizID)
-            .then(function(response) {
+        fetch(`https://kahoot.it/rest/kahoots/${quizID}`)
+            .then(response => {
                 if (!response.ok) throw new Error('Invalid');
                 return response.json();
             })
-            .then(function(data) {
+            .then(data => {
                 inputBox.style.backgroundColor = currentColors.correct;
                 questions = parseQuestions(data.questions);
                 info.numQuestions = questions.length;
             })
-            .catch(function() {
+            .catch(() => {
                 inputBox.style.backgroundColor = currentColors.incorrect;
                 info.numQuestions = 0;
             });
     }
 
     function parseQuestions(questionsJson) {
-        const parsed = [];
-        questionsJson.forEach(function(question) {
+        return questionsJson.map(question => {
             const q = { type: question.type, time: question.time };
             
             if (['quiz', 'multiple_select_quiz'].includes(question.type)) {
                 q.answers = [];
                 q.incorrectAnswers = [];
-                question.choices.forEach(function(choice, i) {
+                question.choices.forEach((choice, i) => {
                     if (choice.correct) {
                         q.answers.push(i);
                     } else {
@@ -640,15 +575,8 @@
                 });
             }
             
-            if (question.type === 'open_ended') {
-                q.answers = question.choices.map(function(choice) {
-                    return choice.answer;
-                });
-            }
-            
-            parsed.push(q);
+            return q;
         });
-        return parsed;
     }
 
     function highlightAnswers(question) {
@@ -658,23 +586,15 @@
             'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
         );
         
-        answerButtons.forEach(function(button) {
+        answerButtons.forEach(button => {
             if (button) button.style.removeProperty('background-color');
         });
         
         if (question.answers) {
-            question.answers.forEach(function(answer) {
+            question.answers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
                           FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
                 if (btn) btn.style.backgroundColor = currentColors.correct;
-            });
-        }
-        
-        if (question.incorrectAnswers) {
-            question.incorrectAnswers.forEach(function(answer) {
-                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
-                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
-                if (btn) btn.style.backgroundColor = currentColors.incorrect;
             });
         }
     }
@@ -699,7 +619,7 @@
             highlightAnswers(question);
         }
         
-        if (settings.autoAnswer) {
+        if (settings.autoAnswer && question.answers && question.answers.length > 0) {
             const answerTime = (question.time - question.time / (500 / (settings.PPT - 500))) - settings.inputLag;
             setTimeout(() => {
                 answerQuestion(question, question.answers[0]);
@@ -709,22 +629,15 @@
 
     function optimizePerformance() {
         clearInterval(state.mainInterval);
-        
-        const delay = settings.stealthMode ? 
-            Math.floor(Math.random() * 200) + 50 : // Random delay in stealth mode
-            (settings.autoAnswer ? 50 : 1000); // Frequent checks when auto-answering
-        
-        state.mainInterval = setInterval(mainLoop, delay);
+        state.mainInterval = setInterval(mainLoop, settings.autoAnswer ? 50 : 1000);
     }
 
     function mainLoop() {
-        // Update question number
         const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
         if (textElement) {
             info.questionNum = parseInt(textElement.textContent) - 1;
         }
         
-        // Detect new question
         if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
             info.lastAnsweredQuestion !== info.questionNum) {
             info.lastAnsweredQuestion = info.questionNum;
@@ -737,40 +650,27 @@
     // ======================
 
     function init() {
+        // Create UI
         createUI();
-        optimizePerformance();
         
-        // Add CSS styles
+        // Add CSS
         const style = document.createElement('style');
         style.textContent = `
             .kahack-ui {
-                font-family: 'Montserrat', sans-serif;
+                font-family: Arial, sans-serif;
             }
             input[type="range"] {
-                -webkit-appearance: none;
                 width: 100%;
-                height: 6px;
-                background: #555;
-                border-radius: 3px;
-                outline: none;
-            }
-            input[type="range"]::-webkit-slider-thumb {
-                -webkit-appearance: none;
-                width: 16px;
-                height: 16px;
-                background: #333;
-                border-radius: '50%';
-                cursor: pointer;
             }
             button {
-                transition: transform 0.2s ease;
+                transition: background-color 0.2s;
             }
         `;
         document.head.appendChild(style);
-
+        
         // Add to DOM
         document.body.appendChild(uiElement);
-
+        
         // Set up keybinds
         document.addEventListener('keydown', function(e) {
             // ALT+H - Toggle UI visibility
@@ -819,6 +719,9 @@
                 stopRainbowEffect();
             }
         });
+
+        // Start main loop
+        optimizePerformance();
     }
 
     // Start the script
@@ -827,5 +730,4 @@
     } else {
         setTimeout(init, 500);
     }
-
 })();
