@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         KaHack! Neon Pro
-// @version      2.2.1
+// @version      2.3.0
 // @namespace    https://github.com/jokeri2222
 // @description  Ultra-smooth Kahoot hack with optimized neon UI
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon-Pro.meta.js
@@ -17,7 +17,7 @@
     // ======================
     // CORE CONFIGURATION
     // ======================
-    const Version = '2.2.1';
+    const Version = '2.3.0';
     const colors = {
         primary: 'rgba(15, 5, 30, 0.97)',
         secondary: 'rgba(25, 10, 50, 0.95)',
@@ -62,7 +62,7 @@
         position: 'fixed',
         top: '20px',
         left: '20px',
-        width: '360px',
+        width: '380px', // Increased width for better spacing
         maxHeight: '70vh',
         backgroundColor: colors.primary,
         borderRadius: '12px',
@@ -187,7 +187,8 @@
             color: colors.text,
             fontSize: '14px',
             outline: 'none',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            boxSizing: 'border-box' // Added for better input sizing
         });
         input.placeholder = placeholder;
         return input;
@@ -317,6 +318,96 @@
             createParticles(btn, 5);
         });
         return btn;
+    }
+
+    // ======================
+    // CORE FUNCTIONALITY IMPORTS
+    // ======================
+
+    // Helper function to find elements by attribute
+    function FindByAttributeValue(attribute, value, element_type) {
+        element_type = element_type || "*";
+        const All = document.getElementsByTagName(element_type);
+        for (let i = 0; i < All.length; i++) {
+            if (All[i].getAttribute(attribute) === value) return All[i];
+        }
+        return null;
+    }
+
+    // Fixed Rainbow Mode Functions
+    function startRainbowEffect() {
+        if (rainbowInterval) clearInterval(rainbowInterval);
+        
+        function applyRainbowColors() {
+            const buttons = document.querySelectorAll(
+                'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
+            );
+            
+            buttons.forEach(button => {
+                const randomColor = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
+                button.style.cssText = `
+                    background-color: ${randomColor} !important;
+                    transition: background-color ${rainbowSpeed/1000}s ease !important;
+                `;
+            });
+        }
+        
+        applyRainbowColors();
+        rainbowInterval = setInterval(applyRainbowColors, rainbowSpeed);
+    }
+
+    function stopRainbowEffect() {
+        if (rainbowInterval) {
+            clearInterval(rainbowInterval);
+            rainbowInterval = null;
+        }
+        resetAnswerColors();
+    }
+
+    function resetAnswerColors() {
+        const buttons = document.querySelectorAll(
+            'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
+        );
+        buttons.forEach(button => {
+            button.style.removeProperty('background-color');
+            button.style.removeProperty('transition');
+        });
+    }
+
+    // Fixed Answer Highlighting
+    function highlightAnswers(question) {
+        if (!question) return;
+        
+        const answerButtons = document.querySelectorAll(
+            'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
+        );
+        
+        // Reset all buttons first
+        answerButtons.forEach(function(button) {
+            button.style.removeProperty('background-color');
+        });
+        
+        // Highlight correct answers
+        if (question.answers) {
+            question.answers.forEach(function(answer) {
+                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
+                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
+                if (btn) {
+                    btn.style.setProperty('background-color', colors.correct, 'important');
+                }
+            });
+        }
+        
+        // Highlight incorrect answers
+        if (question.incorrectAnswers) {
+            question.incorrectAnswers.forEach(function(answer) {
+                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
+                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
+                if (btn) {
+                    btn.style.setProperty('background-color', colors.incorrect, 'important');
+                }
+            });
+        }
     }
 
     // ======================
@@ -538,7 +629,7 @@
     });
 
     // ======================
-    // ORIGINAL FUNCTIONS (OPTIMIZED)
+    // GAME FUNCTIONS
     // ======================
 
     function parseQuestions(questionsJson) {
@@ -559,39 +650,6 @@
             
             return q;
         });
-    }
-
-    function resetAnswerColors() {
-        document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]')
-            .forEach(btn => {
-                btn.style.removeProperty('background-color');
-                btn.style.removeProperty('transition');
-            });
-    }
-
-    function highlightAnswers(question) {
-        if (!question?.answers) return;
-        
-        const buttons = document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]');
-        
-        // Reset first
-        buttons.forEach(btn => btn.style.removeProperty('background-color'));
-        
-        // Highlight correct
-        question.answers.forEach(answer => {
-            const selector = `[data-functional-selector="answer-${answer}"], [data-functional-selector="multi-select-button-${answer}"]`;
-            const btn = document.querySelector(selector);
-            if (btn) btn.style.backgroundColor = `${colors.correct} !important`;
-        });
-        
-        // Highlight incorrect (if any)
-        if (question.incorrectAnswers) {
-            question.incorrectAnswers.forEach(answer => {
-                const selector = `[data-functional-selector="answer-${answer}"], [data-functional-selector="multi-select-button-${answer}"]`;
-                const btn = document.querySelector(selector);
-                if (btn) btn.style.backgroundColor = `${colors.incorrect} !important`;
-            });
-        }
     }
 
     function answer(question, time) {
@@ -615,33 +673,6 @@
                 }, 50);
             }
         }, time - delay);
-    }
-
-    function startRainbowEffect() {
-        stopRainbowEffect();
-        
-        function applyColors() {
-            const buttons = document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]');
-            const color = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
-            
-            requestAnimationFrame(() => {
-                buttons.forEach(btn => {
-                    btn.style.backgroundColor = `${color} !important`;
-                    btn.style.transition = `background-color ${rainbowSpeed/1000}s linear`;
-                });
-            });
-        }
-        
-        applyColors();
-        rainbowInterval = setInterval(applyColors, rainbowSpeed);
-    }
-
-    function stopRainbowEffect() {
-        if (rainbowInterval) {
-            clearInterval(rainbowInterval);
-            rainbowInterval = null;
-        }
-        if (!isAltRPressed && !isAltSPressed) resetAnswerColors();
     }
 
     function onQuestionStart() {
@@ -724,7 +755,7 @@
         }
     });
 
-    // Main Game Loop (Optimized)
+    // Main Game Loop
     setInterval(() => {
         // Update question counter
         const counter = document.querySelector('[data-functional-selector="question-index-counter"]');
@@ -801,7 +832,7 @@
     document.head.appendChild(style);
 
     // ======================
-    // SMOOTH PARTICLES
+    // PARTICLES
     // ======================
 
     function createParticles(element, count = 5) {
