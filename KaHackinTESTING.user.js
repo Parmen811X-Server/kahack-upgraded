@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         KaHack! Neon Pro
-// @version      2.1.0
+// @version      2.2.0
 // @namespace    https://github.com/jokeri2222
 // @description  Ultra-smooth Kahoot hack with optimized neon UI
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon-Pro.meta.js
@@ -17,7 +17,7 @@
     // ======================
     // CORE CONFIGURATION
     // ======================
-    const Version = '2.1.0';
+    const Version = '2.2.0';
     const colors = {
         primary: 'rgba(15, 5, 30, 0.97)',
         secondary: 'rgba(25, 10, 50, 0.95)',
@@ -56,7 +56,7 @@
     // OPTIMIZED UI COMPONENTS
     // ======================
 
-    // Main UI Container with GPU acceleration
+    // Main UI Container
     const uiElement = document.createElement('div');
     Object.assign(uiElement.style, {
         position: 'fixed',
@@ -91,7 +91,7 @@
         flexShrink: '0'
     });
 
-    // Title with text glow
+    // Title
     const title = document.createElement('div');
     title.textContent = 'KaHack! NEON PRO';
     Object.assign(title.style, {
@@ -413,7 +413,7 @@
     // ======================
 
     let dragData = null;
-    const dragThreshold = 5; // pixels to move before dragging starts
+    const dragThreshold = 5;
 
     header.addEventListener('mousedown', (e) => {
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
@@ -429,7 +429,7 @@
         e.preventDefault();
     });
 
-    document.addEventListener('mousemove', (e) => {
+    function handleDragMove(e) {
         if (!dragData) return;
 
         const dx = Math.abs(e.clientX - dragData.startX);
@@ -445,12 +445,14 @@
             const x = Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, e.clientX - dragData.offsetX));
             const y = Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, e.clientY - dragData.offsetY));
             
-            uiElement.style.left = `${x}px`;
-            uiElement.style.top = `${y}px`;
+            requestAnimationFrame(() => {
+                uiElement.style.left = `${x}px`;
+                uiElement.style.top = `${y}px`;
+            });
         }
-    });
+    }
 
-    document.addEventListener('mouseup', () => {
+    function handleDragEnd() {
         if (dragData) {
             if (dragData.dragging) {
                 uiElement.style.cursor = '';
@@ -458,7 +460,10 @@
             }
             dragData = null;
         }
-    });
+    }
+
+    document.addEventListener('mousemove', handleDragMove);
+    document.addEventListener('mouseup', handleDragEnd);
 
     // ======================
     // UI CONTROLS
@@ -739,7 +744,7 @@
                 info.ILSetQuestion = info.questionNum;
                 const increment = parseInt(incrementEl.textContent.split(" ")[1]);
                 
-                if (!isNaN(increment) {
+                if (!isNaN(increment)) {
                     const ppt = Math.min(Answered_PPT, 987);
                     const adjustment = (ppt - increment) * 15;
                     inputLag = Math.max(0, inputLag + adjustment);
@@ -791,4 +796,68 @@
         }
     `;
     document.head.appendChild(style);
+
+    // ======================
+    // SMOOTH PARTICLES
+    // ======================
+
+    function createParticles(element, count = 5) {
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            const size = Math.random() * 4 + 2;
+            const color = colors.particleColors[Math.floor(Math.random() * colors.particleColors.length)];
+            
+            Object.assign(particle.style, {
+                position: 'fixed',
+                width: `${size}px`,
+                height: `${size}px`,
+                backgroundColor: color,
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: '10000',
+                left: `${centerX}px`,
+                top: `${centerY}px`,
+                opacity: '0.8',
+                transform: 'translate(-50%, -50%)',
+                willChange: 'transform, opacity'
+            });
+            
+            document.body.appendChild(particle);
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 20 + 10;
+            const duration = Math.random() * 600 + 400;
+            
+            const startTime = performance.now();
+            
+            function animate(time) {
+                const elapsed = time - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const x = centerX + Math.cos(angle) * distance * progress;
+                const y = centerY + Math.sin(angle) * distance * progress;
+                
+                particle.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+                particle.style.opacity = 0.8 * (1 - progress);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    particle.remove();
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+    }
+
+    // Add particle effects to buttons
+    [minimizeBtn, closeBtn].forEach(btn => {
+        btn.addEventListener('mouseenter', () => createParticles(btn, 3));
+        btn.addEventListener('click', () => createParticles(btn, 5));
+    });
 })();
