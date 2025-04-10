@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         KaHack! Neon Edition
-// @version      2.0.0
+// @name         KaHack! Neon Pro
+// @version      2.1.0
 // @namespace    https://github.com/jokeri2222
-// @description  Ultra-smooth Kahoot hack with glowing neon UI
-// @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon.meta.js
-// @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon.user.js
+// @description  Ultra-smooth Kahoot hack with optimized neon UI
+// @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon-Pro.meta.js
+// @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon-Pro.user.js
 // @author       jokeri2222
 // @match        https://kahoot.it/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=kahoot.it
@@ -14,23 +14,25 @@
 (function() {
     'use strict';
 
-    // Neon Configuration
-    const Version = '2.0.0';
+    // ======================
+    // CORE CONFIGURATION
+    // ======================
+    const Version = '2.1.0';
     const colors = {
-        primary: 'rgba(10, 5, 20, 0.95)',
-        secondary: 'rgba(20, 10, 40, 0.9)',
-        accent: 'rgba(100, 50, 255, 0.7)',
-        text: '#e6e6ff',
-        correct: 'hsl(155, 100%, 50%)',
-        incorrect: 'hsl(350, 100%, 60%)',
-        close: 'hsl(350, 100%, 60%)',
-        minimize: 'hsl(240, 100%, 70%)',
-        glow: '0 0 15px rgba(100, 220, 255, 0.8)',
+        primary: 'rgba(15, 5, 30, 0.97)',
+        secondary: 'rgba(25, 10, 50, 0.95)',
+        accent: 'rgba(120, 80, 255, 0.8)',
+        text: '#f0f0ff',
+        correct: 'hsl(155, 100%, 60%)',
+        incorrect: 'hsl(350, 100%, 65%)',
+        close: 'hsl(350, 100%, 65%)',
+        minimize: 'hsl(240, 100%, 75%)',
+        glow: '0 0 20px rgba(120, 220, 255, 0.9)',
         rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
         particleColors: ['#00ffff', '#ff00ff', '#ffff00']
     };
 
-    // Core Variables (unchanged from original)
+    // Core Variables
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -50,42 +52,32 @@
     let rainbowInterval = null;
     let rainbowSpeed = 300;
 
-    // Helper function (unchanged)
-    function FindByAttributeValue(attribute, value, element_type) {
-        element_type = element_type || "*";
-        const All = document.getElementsByTagName(element_type);
-        for (let i = 0; i < All.length; i++) {
-            if (All[i].getAttribute(attribute) === value) return All[i];
-        }
-        return null;
-    }
-
     // ======================
-    // NEON UI COMPONENTS
+    // OPTIMIZED UI COMPONENTS
     // ======================
 
-    // Create main UI container with neon border
+    // Main UI Container with GPU acceleration
     const uiElement = document.createElement('div');
-    uiElement.className = 'kahack-neon-ui';
     Object.assign(uiElement.style, {
         position: 'fixed',
         top: '20px',
         left: '20px',
         width: '360px',
+        maxHeight: '70vh',
         backgroundColor: colors.primary,
         borderRadius: '12px',
-        boxShadow: `0 0 20px ${colors.accent}, inset 0 0 10px rgba(100, 220, 255, 0.3)`,
+        boxShadow: `${colors.glow}, inset 0 0 15px rgba(100, 220, 255, 0.4)`,
         zIndex: '9999',
         overflow: 'hidden',
         border: `1px solid ${colors.accent}`,
-        transition: 'all 0.3s ease',
-        backdropFilter: 'blur(5px)',
-        transform: 'translateZ(0)'
+        transform: 'translateZ(0)',
+        willChange: 'transform, opacity',
+        display: 'flex',
+        flexDirection: 'column'
     });
 
-    // Create pulsing neon header
+    // Draggable Header
     const header = document.createElement('div');
-    header.className = 'neon-header';
     Object.assign(header.style, {
         padding: '12px 20px',
         background: `linear-gradient(90deg, ${colors.secondary}, ${colors.primary})`,
@@ -96,44 +88,21 @@
         alignItems: 'center',
         userSelect: 'none',
         borderBottom: `1px solid ${colors.accent}`,
-        position: 'relative',
-        overflow: 'hidden'
+        flexShrink: '0'
     });
-
-    // Add header glow effect
-    const headerGlow = document.createElement('div');
-    headerGlow.className = 'header-glow';
-    Object.assign(headerGlow.style, {
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        width: '100%',
-        height: '100%',
-        background: `linear-gradient(90deg, 
-            transparent, 
-            rgba(100, 220, 255, 0.2), 
-            transparent)`,
-        animation: 'pulseGlow 3s infinite alternate'
-    });
-    header.appendChild(headerGlow);
 
     // Title with text glow
     const title = document.createElement('div');
-    title.textContent = 'KaHack! NEON';
+    title.textContent = 'KaHack! NEON PRO';
     Object.assign(title.style, {
         fontWeight: 'bold',
         fontSize: '18px',
-        textShadow: `0 0 10px ${colors.accent}`,
-        position: 'relative',
-        zIndex: '1'
+        textShadow: `0 0 12px ${colors.accent}`,
+        whiteSpace: 'nowrap'
     });
 
-    // Control buttons with hover glow
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.gap = '8px';
-
-    function createControlButton(symbol, color) {
+    // Control Buttons
+    function createControlBtn(symbol, color) {
         const btn = document.createElement('div');
         btn.textContent = symbol;
         Object.assign(btn.style, {
@@ -141,82 +110,57 @@
             height: '26px',
             background: color,
             color: colors.text,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            display: 'grid',
+            placeItems: 'center',
             borderRadius: '50%',
             cursor: 'pointer',
             fontSize: '14px',
             transition: 'all 0.2s ease',
-            boxShadow: `0 0 5px ${color}`,
-            position: 'relative',
-            zIndex: '1'
+            boxShadow: `0 0 8px ${color}`,
+            flexShrink: '0'
         });
-
-        btn.addEventListener('mouseenter', () => {
-            btn.style.boxShadow = `0 0 15px ${color}`;
-            btn.style.transform = 'scale(1.1)';
-        });
-
-        btn.addEventListener('mouseleave', () => {
-            btn.style.boxShadow = `0 0 5px ${color}`;
-            btn.style.transform = 'scale(1)';
-        });
-
         return btn;
     }
 
-    const minimizeBtn = createControlButton('─', colors.minimize);
-    const closeBtn = createControlButton('✕', colors.close);
+    const minimizeBtn = createControlBtn('─', colors.minimize);
+    const closeBtn = createControlBtn('✕', colors.close);
 
-    buttonContainer.appendChild(minimizeBtn);
-    buttonContainer.appendChild(closeBtn);
-    header.appendChild(title);
-    header.appendChild(buttonContainer);
+    // Button container
+    const btnContainer = document.createElement('div');
+    Object.assign(btnContainer.style, {
+        display: 'flex',
+        gap: '8px'
+    });
+    btnContainer.append(minimizeBtn, closeBtn);
+    header.append(title, btnContainer);
     uiElement.appendChild(header);
 
-    // Create content container with scroll
+    // Scrollable Content
     const content = document.createElement('div');
-    content.className = 'neon-content';
     Object.assign(content.style, {
         padding: '15px',
+        overflowY: 'auto',
+        scrollbarWidth: 'thin',
+        flexGrow: '1',
         display: 'flex',
         flexDirection: 'column',
-        gap: '15px',
-        maxHeight: '60vh',
-        overflowY: 'auto',
-        scrollbarWidth: 'thin'
+        gap: '15px'
     });
 
     // ======================
-    // NEON UI SECTIONS
+    // UI SECTION TEMPLATES
     // ======================
 
-    function createNeonSection(titleText) {
+    function createSection(titleText) {
         const section = document.createElement('div');
         Object.assign(section.style, {
             background: `linear-gradient(145deg, ${colors.secondary}, ${colors.primary})`,
             borderRadius: '10px',
             padding: '15px',
             border: `1px solid ${colors.accent}`,
-            boxShadow: `0 0 10px rgba(100, 220, 255, 0.2)`,
-            transition: 'all 0.3s ease',
-            position: 'relative',
-            overflow: 'hidden'
+            boxShadow: `0 0 12px rgba(100, 220, 255, 0.2)`,
+            flexShrink: '0'
         });
-
-        // Section corner glow
-        const cornerGlow = document.createElement('div');
-        Object.assign(cornerGlow.style, {
-            position: 'absolute',
-            top: '0',
-            right: '0',
-            width: '20px',
-            height: '20px',
-            background: `radial-gradient(circle at 100% 0%, ${colors.accent}, transparent 70%)`,
-            pointerEvents: 'none'
-        });
-        section.appendChild(cornerGlow);
 
         const header = document.createElement('h3');
         header.textContent = titleText;
@@ -225,18 +169,14 @@
             color: colors.text,
             fontSize: '16px',
             fontWeight: '600',
-            textShadow: `0 0 5px ${colors.accent}`
+            textShadow: `0 0 8px ${colors.accent}`
         });
 
         section.appendChild(header);
         return { section, body: section };
     }
 
-    // Create neon input field
-    function createNeonInput(placeholder) {
-        const container = document.createElement('div');
-        container.style.position = 'relative';
-
+    function createInput(placeholder) {
         const input = document.createElement('input');
         Object.assign(input.style, {
             width: '100%',
@@ -246,28 +186,14 @@
             background: 'rgba(0, 0, 0, 0.3)',
             color: colors.text,
             fontSize: '14px',
-            transition: 'all 0.3s ease',
-            outline: 'none'
+            outline: 'none',
+            transition: 'all 0.3s ease'
         });
         input.placeholder = placeholder;
-
-        // Input glow effect
-        input.addEventListener('focus', () => {
-            input.style.boxShadow = `0 0 10px ${colors.accent}`;
-            input.style.borderColor = colors.correct;
-        });
-
-        input.addEventListener('blur', () => {
-            input.style.boxShadow = 'none';
-            input.style.borderColor = colors.accent;
-        });
-
-        container.appendChild(input);
-        return { container, input };
+        return input;
     }
 
-    // Create neon slider
-    function createNeonSlider(min, max, value) {
+    function createSlider(min, max, value) {
         const container = document.createElement('div');
         container.style.display = 'flex';
         container.style.alignItems = 'center';
@@ -278,32 +204,28 @@
         slider.min = min;
         slider.max = max;
         slider.value = value;
-
         Object.assign(slider.style, {
             flex: '1',
             height: '6px',
             WebkitAppearance: 'none',
             background: `linear-gradient(90deg, ${colors.accent}, ${colors.correct})`,
-            borderRadius: '3px',
-            outline: 'none'
+            borderRadius: '3px'
         });
 
         const valueDisplay = document.createElement('span');
         valueDisplay.textContent = value;
         Object.assign(valueDisplay.style, {
             color: colors.text,
-            minWidth: '40px',
+            minWidth: '50px',
             textAlign: 'center',
             textShadow: `0 0 5px ${colors.accent}`
         });
 
-        container.appendChild(slider);
-        container.appendChild(valueDisplay);
+        container.append(slider, valueDisplay);
         return { container, slider, valueDisplay };
     }
 
-    // Create neon toggle switch
-    function createNeonToggle(label, checked, onChange) {
+    function createToggle(label, checked, onChange) {
         const container = document.createElement('div');
         Object.assign(container.style, {
             display: 'flex',
@@ -312,12 +234,11 @@
             margin: '10px 0'
         });
 
-        const labelElement = document.createElement('span');
-        labelElement.textContent = label;
-        Object.assign(labelElement.style, {
+        const labelEl = document.createElement('span');
+        labelEl.textContent = label;
+        Object.assign(labelEl.style, {
             color: colors.text,
-            fontSize: '14px',
-            textShadow: `0 0 3px ${colors.accent}`
+            fontSize: '14px'
         });
 
         const toggle = document.createElement('label');
@@ -331,11 +252,7 @@
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = checked;
-        Object.assign(input.style, {
-            opacity: '0',
-            width: '0',
-            height: '0'
-        });
+        input.style.opacity = '0';
 
         const slider = document.createElement('span');
         Object.assign(slider.style, {
@@ -351,8 +268,8 @@
             boxShadow: checked ? `0 0 10px ${colors.correct}` : 'none'
         });
 
-        const sliderKnob = document.createElement('span');
-        Object.assign(sliderKnob.style, {
+        const knob = document.createElement('span');
+        Object.assign(knob.style, {
             position: 'absolute',
             height: '20px',
             width: '20px',
@@ -364,84 +281,39 @@
             boxShadow: `0 0 5px rgba(0,0,0,0.3)`
         });
 
-        input.addEventListener('change', function() {
-            const isChecked = this.checked;
+        input.addEventListener('change', () => {
+            const isChecked = input.checked;
             slider.style.backgroundColor = isChecked ? colors.correct : colors.incorrect;
             slider.style.boxShadow = isChecked ? `0 0 10px ${colors.correct}` : 'none';
-            sliderKnob.style.left = isChecked ? '26px' : '4px';
+            knob.style.left = isChecked ? '26px' : '4px';
             onChange(isChecked);
         });
 
-        toggle.appendChild(input);
-        toggle.appendChild(slider);
-        slider.appendChild(sliderKnob);
-        container.appendChild(labelElement);
-        container.appendChild(toggle);
-
+        slider.appendChild(knob);
+        toggle.append(input, slider);
+        container.append(labelEl, toggle);
         return container;
     }
 
-    // Create neon button
-    function createNeonButton(text, onClick) {
-        const button = document.createElement('button');
-        button.textContent = text;
-        Object.assign(button.style, {
+    function createButton(text, onClick) {
+        const btn = document.createElement('button');
+        btn.textContent = text;
+        Object.assign(btn.style, {
             width: '100%',
             padding: '10px',
-            marginTop: '5px',
             background: `linear-gradient(145deg, ${colors.accent}, ${colors.secondary})`,
             color: colors.text,
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
-            transition: 'all 0.3s ease',
             fontSize: '14px',
             fontWeight: '500',
             textShadow: `0 0 5px ${colors.accent}`,
-            position: 'relative',
-            overflow: 'hidden'
+            transition: 'all 0.2s ease'
         });
 
-        // Button hover effect
-        button.addEventListener('mouseenter', () => {
-            button.style.boxShadow = `0 0 15px ${colors.accent}`;
-            button.style.transform = 'translateY(-2px)';
-        });
-
-        button.addEventListener('mouseleave', () => {
-            button.style.boxShadow = 'none';
-            button.style.transform = 'translateY(0)';
-        });
-
-        button.addEventListener('click', () => {
-            button.style.boxShadow = `0 0 20px ${colors.accent}`;
-            setTimeout(() => {
-                button.style.boxShadow = 'none';
-            }, 300);
-            onClick();
-        });
-
-        // Button glow effect
-        const buttonGlow = document.createElement('div');
-        Object.assign(buttonGlow.style, {
-            position: 'absolute',
-            top: '-50%',
-            left: '-50%',
-            width: '200%',
-            height: '200%',
-            background: `conic-gradient(
-                from 0deg at 50% 50%,
-                transparent 0%,
-                ${colors.accent} 10%,
-                transparent 20%
-            )`,
-            opacity: '0.3',
-            animation: 'rotateGlow 4s linear infinite',
-            pointerEvents: 'none'
-        });
-        button.appendChild(buttonGlow);
-
-        return button;
+        btn.addEventListener('click', onClick);
+        return btn;
     }
 
     // ======================
@@ -449,41 +321,39 @@
     // ======================
 
     // Quiz ID Section
-    const quizIdSection = createNeonSection('QUIZ ID');
-    const quizIdInput = createNeonInput('Enter Quiz ID...');
-    quizIdSection.body.appendChild(quizIdInput.container);
+    const quizIdSection = createSection('QUIZ ID');
+    const quizIdInput = createInput('Enter Quiz ID...');
+    quizIdSection.body.appendChild(quizIdInput);
     content.appendChild(quizIdSection.section);
 
     // Points Section
-    const pointsSection = createNeonSection('POINTS PER QUESTION');
-    const pointsSlider = createNeonSlider(500, 1000, 950);
+    const pointsSection = createSection('POINTS PER QUESTION');
+    const pointsSlider = createSlider(500, 1000, 950);
     pointsSection.body.appendChild(pointsSlider.container);
     content.appendChild(pointsSection.section);
 
     // Answering Section
-    const answeringSection = createNeonSection('ANSWERING');
+    const answeringSection = createSection('ANSWERING');
     answeringSection.body.appendChild(
-        createNeonToggle('Auto Answer', autoAnswer, (checked) => {
+        createToggle('Auto Answer', autoAnswer, (checked) => {
             autoAnswer = checked;
             info.ILSetQuestion = info.questionNum;
         })
     );
     answeringSection.body.appendChild(
-        createNeonToggle('Show Answers', showAnswers, (checked) => {
+        createToggle('Show Answers', showAnswers, (checked) => {
             showAnswers = checked;
-            if (!showAnswers && !isAltSPressed) {
-                resetAnswerColors();
-            }
+            if (!showAnswers && !isAltSPressed) resetAnswerColors();
         })
     );
     content.appendChild(answeringSection.section);
 
     // Rainbow Section
-    const rainbowSection = createNeonSection('RAINBOW MODE');
-    const rainbowSlider = createNeonSlider(50, 1000, 300);
+    const rainbowSection = createSection('RAINBOW MODE');
+    const rainbowSlider = createSlider(50, 1000, 300);
     rainbowSection.body.appendChild(rainbowSlider.container);
     rainbowSection.body.appendChild(
-        createNeonButton('Toggle Rainbow', () => {
+        createButton('Toggle Rainbow', () => {
             if (rainbowInterval) {
                 stopRainbowEffect();
             } else {
@@ -494,104 +364,405 @@
     content.appendChild(rainbowSection.section);
 
     // Keybinds Section
-    const keybindsSection = createNeonSection('KEYBINDS');
-    const keybindsList = document.createElement('div');
-    keybindsList.style.color = colors.text;
-    keybindsList.style.fontSize = '13px';
-    keybindsList.style.lineHeight = '1.6';
-    
+    const keybindsSection = createSection('KEYBINDS');
     const keybinds = [
-        ['ALT + H', 'Toggle UI visibility'],
-        ['ALT + W', 'Answer correctly'],
-        ['ALT + S', 'Show answers (while held)'],
-        ['ALT + R', 'Rainbow mode (while held)'],
-        ['Shift', 'Quick hide/show']
+        ['ALT + H', 'Toggle UI'],
+        ['ALT + W', 'Correct answer'],
+        ['ALT + S', 'Show answers'],
+        ['ALT + R', 'Rainbow mode'],
+        ['Shift', 'Quick hide']
     ];
-    
+
     keybinds.forEach(([key, desc]) => {
-        const item = document.createElement('div');
-        item.style.display = 'flex';
-        item.style.justifyContent = 'space-between';
-        item.style.margin = '5px 0';
-        
-        const keyElem = document.createElement('span');
-        keyElem.textContent = key;
-        keyElem.style.fontWeight = 'bold';
-        keyElem.style.color = colors.accent;
-        
-        const descElem = document.createElement('span');
-        descElem.textContent = desc;
-        
-        item.appendChild(keyElem);
-        item.appendChild(descElem);
-        keybindsList.appendChild(item);
+        const row = document.createElement('div');
+        Object.assign(row.style, {
+            display: 'flex',
+            justifyContent: 'space-between',
+            margin: '6px 0',
+            fontSize: '13px'
+        });
+        row.innerHTML = `<span style="color:${colors.accent};font-weight:bold">${key}</span><span>${desc}</span>`;
+        keybindsSection.body.appendChild(row);
     });
-    
-    keybindsSection.body.appendChild(keybindsList);
     content.appendChild(keybindsSection.section);
 
     // Info Section
-    const infoSection = createNeonSection('INFO');
+    const infoSection = createSection('INFO');
     const questionsLabel = document.createElement('div');
     questionsLabel.textContent = 'Question: 0/0';
-    questionsLabel.style.color = colors.text;
     questionsLabel.style.margin = '5px 0';
     infoSection.body.appendChild(questionsLabel);
 
     const inputLagLabel = document.createElement('div');
     inputLagLabel.textContent = 'Input lag: 100ms';
-    inputLagLabel.style.color = colors.text;
     inputLagLabel.style.margin = '5px 0';
     infoSection.body.appendChild(inputLagLabel);
 
     const versionLabel = document.createElement('div');
-    versionLabel.textContent = 'Version: ' + Version;
-    versionLabel.style.color = colors.text;
+    versionLabel.textContent = `Version: ${Version}`;
     versionLabel.style.margin = '5px 0';
     infoSection.body.appendChild(versionLabel);
     content.appendChild(infoSection.section);
 
-    // Add UI to document
-    document.body.appendChild(uiElement);
+    // Final Assembly
     uiElement.appendChild(content);
+    document.body.appendChild(uiElement);
 
     // ======================
-    // ORIGINAL FUNCTIONALITY
+    // OPTIMIZED DRAGGING
     // ======================
 
-    // (All original functions remain exactly the same, just with the new UI elements)
-    // This includes:
-    // - createParticles()
-    // - startRainbowEffect()
-    // - stopRainbowEffect()
-    // - resetAnswerColors()
-    // - handleInputChange()
-    // - highlightAnswers()
-    // - answer()
-    // - onQuestionStart()
-    // - parseQuestions()
-    // - All event listeners
-    // - The main interval
+    let dragData = null;
+    const dragThreshold = 5; // pixels to move before dragging starts
+
+    header.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+        
+        dragData = {
+            startX: e.clientX,
+            startY: e.clientY,
+            offsetX: e.clientX - uiElement.offsetLeft,
+            offsetY: e.clientY - uiElement.offsetTop,
+            dragging: false
+        };
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!dragData) return;
+
+        const dx = Math.abs(e.clientX - dragData.startX);
+        const dy = Math.abs(e.clientY - dragData.startY);
+
+        if (!dragData.dragging && (dx > dragThreshold || dy > dragThreshold)) {
+            dragData.dragging = true;
+            uiElement.style.cursor = 'grabbing';
+            uiElement.style.userSelect = 'none';
+        }
+
+        if (dragData.dragging) {
+            const x = Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, e.clientX - dragData.offsetX));
+            const y = Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, e.clientY - dragData.offsetY));
+            
+            uiElement.style.left = `${x}px`;
+            uiElement.style.top = `${y}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (dragData) {
+            if (dragData.dragging) {
+                uiElement.style.cursor = '';
+                uiElement.style.userSelect = '';
+            }
+            dragData = null;
+        }
+    });
 
     // ======================
-    // NEON ANIMATION STYLES
+    // UI CONTROLS
+    // ======================
+
+    // Minimize Toggle
+    let isMinimized = false;
+    minimizeBtn.addEventListener('click', () => {
+        isMinimized = !isMinimized;
+        content.style.display = isMinimized ? 'none' : 'flex';
+        minimizeBtn.textContent = isMinimized ? '+' : '─';
+    });
+
+    // Close Button
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(uiElement);
+        autoAnswer = false;
+        showAnswers = false;
+        stopRainbowEffect();
+    });
+
+    // ======================
+    // CORE FUNCTIONALITY
+    // ======================
+
+    // Quiz ID Validation
+    quizIdInput.addEventListener('input', () => {
+        const quizID = quizIdInput.value.trim();
+        
+        if (quizID === "") {
+            quizIdInput.style.borderColor = colors.accent;
+            quizIdInput.style.boxShadow = 'none';
+            info.numQuestions = 0;
+            questionsLabel.textContent = 'Question: 0/0';
+            return;
+        }
+        
+        fetch(`https://kahoot.it/rest/kahoots/${quizID}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Invalid');
+                return response.json();
+            })
+            .then(data => {
+                quizIdInput.style.borderColor = colors.correct;
+                quizIdInput.style.boxShadow = `0 0 10px ${colors.correct}`;
+                questions = parseQuestions(data.questions);
+                info.numQuestions = questions.length;
+                questionsLabel.textContent = `Question: 0/${info.numQuestions}`;
+            })
+            .catch(() => {
+                quizIdInput.style.borderColor = colors.incorrect;
+                quizIdInput.style.boxShadow = `0 0 10px ${colors.incorrect}`;
+                info.numQuestions = 0;
+                questionsLabel.textContent = 'Question: 0/0';
+            });
+    });
+
+    // Points Slider
+    pointsSlider.slider.addEventListener('input', () => {
+        PPT = +pointsSlider.slider.value;
+        pointsSlider.valueDisplay.textContent = PPT;
+    });
+
+    // Rainbow Slider
+    rainbowSlider.slider.addEventListener('input', () => {
+        rainbowSpeed = +rainbowSlider.slider.value;
+        rainbowSlider.valueDisplay.textContent = `${rainbowSpeed}ms`;
+        if (rainbowInterval) startRainbowEffect();
+    });
+
+    // ======================
+    // ORIGINAL FUNCTIONS (OPTIMIZED)
+    // ======================
+
+    function parseQuestions(questionsJson) {
+        return questionsJson.map(question => {
+            const q = { type: question.type, time: question.time };
+            
+            if (['quiz', 'multiple_select_quiz'].includes(question.type)) {
+                q.answers = [];
+                q.incorrectAnswers = [];
+                question.choices.forEach((choice, i) => {
+                    (choice.correct ? q.answers : q.incorrectAnswers).push(i);
+                });
+            }
+            
+            if (question.type === 'open_ended') {
+                q.answers = question.choices.map(choice => choice.answer);
+            }
+            
+            return q;
+        });
+    }
+
+    function resetAnswerColors() {
+        document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]')
+            .forEach(btn => {
+                btn.style.removeProperty('background-color');
+                btn.style.removeProperty('transition');
+            });
+    }
+
+    function highlightAnswers(question) {
+        if (!question?.answers) return;
+        
+        const buttons = document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]');
+        
+        // Reset first
+        buttons.forEach(btn => btn.style.removeProperty('background-color'));
+        
+        // Highlight correct
+        question.answers.forEach(answer => {
+            const selector = `[data-functional-selector="answer-${answer}"], [data-functional-selector="multi-select-button-${answer}"]`;
+            const btn = document.querySelector(selector);
+            if (btn) btn.style.backgroundColor = `${colors.correct} !important`;
+        });
+        
+        // Highlight incorrect (if any)
+        if (question.incorrectAnswers) {
+            question.incorrectAnswers.forEach(answer => {
+                const selector = `[data-functional-selector="answer-${answer}"], [data-functional-selector="multi-select-button-${answer}"]`;
+                const btn = document.querySelector(selector);
+                if (btn) btn.style.backgroundColor = `${colors.incorrect} !important`;
+            });
+        }
+    }
+
+    function answer(question, time) {
+        Answered_PPT = PPT;
+        const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
+        
+        setTimeout(() => {
+            if (question.type === 'quiz') {
+                const key = (question.answers[0] + 1).toString();
+                window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+            } 
+            else if (question.type === 'multiple_select_quiz') {
+                question.answers.forEach(answer => {
+                    const key = (answer + 1).toString();
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+                });
+                
+                setTimeout(() => {
+                    const submitBtn = document.querySelector('[data-functional-selector="multi-select-submit-button"]');
+                    if (submitBtn) submitBtn.click();
+                }, 50);
+            }
+        }, time - delay);
+    }
+
+    function startRainbowEffect() {
+        stopRainbowEffect();
+        
+        function applyColors() {
+            const buttons = document.querySelectorAll('[data-functional-selector^="answer-"], [data-functional-selector^="multi-select-button-"]');
+            const color = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
+            
+            requestAnimationFrame(() => {
+                buttons.forEach(btn => {
+                    btn.style.backgroundColor = `${color} !important`;
+                    btn.style.transition = `background-color ${rainbowSpeed/1000}s linear`;
+                });
+            });
+        }
+        
+        applyColors();
+        rainbowInterval = setInterval(applyColors, rainbowSpeed);
+    }
+
+    function stopRainbowEffect() {
+        if (rainbowInterval) {
+            clearInterval(rainbowInterval);
+            rainbowInterval = null;
+        }
+        if (!isAltRPressed && !isAltSPressed) resetAnswerColors();
+    }
+
+    function onQuestionStart() {
+        const question = questions[info.questionNum];
+        if (!question) return;
+        
+        if (showAnswers || isAltSPressed) highlightAnswers(question);
+        if (autoAnswer) {
+            const answerTime = (question.time - question.time / (500 / (PPT - 500))) - inputLag;
+            answer(question, answerTime);
+        }
+    }
+
+    // ======================
+    // EVENT LISTENERS
+    // ======================
+
+    document.addEventListener('keydown', e => {
+        // ALT+H - Toggle UI
+        if (e.key.toLowerCase() === 'h' && e.altKey) {
+            e.preventDefault();
+            isAltHPressed = !isAltHPressed;
+            uiElement.style.opacity = isAltHPressed ? '0' : '1';
+            uiElement.style.pointerEvents = isAltHPressed ? 'none' : 'auto';
+        }
+        
+        // SHIFT - Quick hide
+        if (e.key === 'Shift' && !e.altKey) {
+            e.preventDefault();
+            uiElement.style.opacity = uiElement.style.opacity === '0' ? '1' : '0';
+        }
+        
+        // ALT+W - Answer correctly
+        if (e.key.toLowerCase() === 'w' && e.altKey && info.questionNum !== -1) {
+            e.preventDefault();
+            const question = questions[info.questionNum];
+            if (!question?.answers) return;
+            
+            if (question.type === 'quiz') {
+                const key = (question.answers[0] + 1).toString();
+                window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+            } 
+            else if (question.type === 'multiple_select_quiz') {
+                question.answers.forEach(answer => {
+                    const key = (answer + 1).toString();
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key }));
+                });
+                
+                setTimeout(() => {
+                    const submitBtn = document.querySelector('[data-functional-selector="multi-select-submit-button"]');
+                    if (submitBtn) submitBtn.click();
+                }, 50);
+            }
+        }
+        
+        // ALT+S - Show answers
+        if (e.key.toLowerCase() === 's' && e.altKey && info.questionNum !== -1) {
+            e.preventDefault();
+            isAltSPressed = true;
+            highlightAnswers(questions[info.questionNum]);
+        }
+        
+        // ALT+R - Rainbow mode
+        if (e.key.toLowerCase() === 'r' && e.altKey) {
+            e.preventDefault();
+            isAltRPressed = true;
+            startRainbowEffect();
+        }
+    });
+
+    document.addEventListener('keyup', e => {
+        if (e.key.toLowerCase() === 's' && isAltSPressed) {
+            isAltSPressed = false;
+            if (!showAnswers) resetAnswerColors();
+        }
+        
+        if (e.key.toLowerCase() === 'r' && isAltRPressed) {
+            isAltRPressed = false;
+            stopRainbowEffect();
+        }
+    });
+
+    // Main Game Loop (Optimized)
+    setInterval(() => {
+        // Update question counter
+        const counter = document.querySelector('[data-functional-selector="question-index-counter"]');
+        if (counter) {
+            info.questionNum = parseInt(counter.textContent) - 1;
+            questionsLabel.textContent = `Question: ${info.questionNum + 1}/${info.numQuestions}`;
+        }
+        
+        // Detect new question
+        if (document.querySelector('[data-functional-selector^="answer-"]') && 
+            info.lastAnsweredQuestion !== info.questionNum) {
+            info.lastAnsweredQuestion = info.questionNum;
+            onQuestionStart();
+        }
+        
+        // Auto-answer calibration
+        if (autoAnswer && info.ILSetQuestion !== info.questionNum) {
+            const incrementEl = document.querySelector('[data-functional-selector="score-increment"]');
+            if (incrementEl) {
+                info.ILSetQuestion = info.questionNum;
+                const increment = parseInt(incrementEl.textContent.split(" ")[1]);
+                
+                if (!isNaN(increment) {
+                    const ppt = Math.min(Answered_PPT, 987);
+                    const adjustment = (ppt - increment) * 15;
+                    inputLag = Math.max(0, inputLag + adjustment);
+                    inputLagLabel.textContent = `Input lag: ${inputLag}ms`;
+                }
+            }
+        }
+    }, 50);
+
+    // ======================
+    // STYLES
     // ======================
 
     const style = document.createElement('style');
     style.textContent = `
-        @keyframes pulseGlow {
-            0% { opacity: 0.3; }
-            50% { opacity: 0.7; }
-            100% { opacity: 0.3; }
-        }
-        
-        @keyframes rotateGlow {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
         }
         
         .kahack-neon-ui::-webkit-scrollbar {
             width: 6px;
+            background: transparent;
         }
         
         .kahack-neon-ui::-webkit-scrollbar-thumb {
@@ -606,114 +777,18 @@
             background: ${colors.text};
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 5px ${colors.accent};
+            box-shadow: 0 0 8px ${colors.accent};
             border: 1px solid ${colors.accent};
         }
         
-        .neon-content {
-            scrollbar-color: ${colors.accent} transparent;
+        button {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px ${colors.accent};
         }
     `;
     document.head.appendChild(style);
-
-    // ======================
-    // DRAGGABLE UI FUNCTIONALITY
-    // ======================
-
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    header.addEventListener('mousedown', function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
-        isDragging = true;
-        offsetX = e.clientX - uiElement.getBoundingClientRect().left;
-        offsetY = e.clientY - uiElement.getBoundingClientRect().top;
-        uiElement.style.cursor = 'grabbing';
-        e.preventDefault();
-    });
-
-    document.addEventListener('mousemove', function(e) {
-        if (!isDragging) return;
-        
-        const x = Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, e.clientX - offsetX));
-        const y = Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, e.clientY - offsetY));
-        
-        uiElement.style.left = x + 'px';
-        uiElement.style.top = y + 'px';
-    });
-
-    document.addEventListener('mouseup', function() {
-        isDragging = false;
-        uiElement.style.cursor = '';
-    });
-
-    // Minimize functionality
-    let isMinimized = false;
-    minimizeBtn.addEventListener('click', function() {
-        isMinimized = !isMinimized;
-        content.style.display = isMinimized ? 'none' : 'flex';
-        minimizeBtn.textContent = isMinimized ? '+' : '─';
-    });
-
-    // Close functionality
-    closeBtn.addEventListener('click', function() {
-        document.body.removeChild(uiElement);
-        autoAnswer = false;
-        showAnswers = false;
-        stopRainbowEffect();
-    });
-
-    // ======================
-    // CONNECT NEW UI TO ORIGINAL LOGIC
-    // ======================
-
-    // Quiz ID validation
-    quizIdInput.input.addEventListener('input', function() {
-        const quizID = this.value.trim();
-        
-        if (quizID === "") {
-            this.style.backgroundColor = 'rgba(0, 0, 0, 0.3)';
-            info.numQuestions = 0;
-            questionsLabel.textContent = 'Question: 0/0';
-            return;
-        }
-        
-        fetch('https://kahoot.it/rest/kahoots/' + quizID)
-            .then(function(response) {
-                if (!response.ok) throw new Error('Invalid');
-                return response.json();
-            })
-            .then(function(data) {
-                quizIdInput.input.style.borderColor = colors.correct;
-                quizIdInput.input.style.boxShadow = `0 0 10px ${colors.correct}`;
-                questions = parseQuestions(data.questions);
-                info.numQuestions = questions.length;
-                questionsLabel.textContent = 'Question: 0/' + info.numQuestions;
-            })
-            .catch(function() {
-                quizIdInput.input.style.borderColor = colors.incorrect;
-                quizIdInput.input.style.boxShadow = `0 0 10px ${colors.incorrect}`;
-                info.numQuestions = 0;
-                questionsLabel.textContent = 'Question: 0/0';
-            });
-    });
-
-    // Points slider
-    pointsSlider.slider.addEventListener('input', function() {
-        PPT = +this.value;
-        pointsSlider.valueDisplay.textContent = PPT;
-    });
-
-    // Rainbow slider
-    rainbowSlider.slider.addEventListener('input', function() {
-        rainbowSpeed = +this.value;
-        rainbowSlider.valueDisplay.textContent = rainbowSpeed + 'ms';
-        if (rainbowInterval) {
-            startRainbowEffect(); // Restart with new speed
-        }
-    });
-
-    // (Rest of the original functionality remains unchanged)
-    // ...
-    // (Include all remaining original functions exactly as they were)
 })();
