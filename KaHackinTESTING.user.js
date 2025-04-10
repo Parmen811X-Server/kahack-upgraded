@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         KaHack! Smooth Performance
-// @version      1.6.0
+// @version      1.6.1
 // @namespace    https://github.com/jokeri2222
 // @description  Optimized Kahoot hack with lightweight effects and improved UI
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
@@ -15,7 +15,7 @@
     'use strict';
 
     // Configuration
-    const Version = '1.6.0';
+    const Version = '1.6.1';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -223,11 +223,14 @@
     function parseQuestions(questionsJson) {
         const parsed = [];
         questionsJson.forEach(question => {
-            const q = { type: question.type, time: question.time };
+            const q = { 
+                type: question.type, 
+                time: question.time,
+                answers: [],
+                incorrectAnswers: []
+            };
             
-            if (['quiz', 'multiple_select_quiz'].includes(question.type)) {
-                q.answers = [];
-                q.incorrectAnswers = [];
+            if (question.choices) {
                 question.choices.forEach((choice, i) => {
                     if (choice.correct) {
                         q.answers.push(i);
@@ -235,10 +238,6 @@
                         q.incorrectAnswers.push(i);
                     }
                 });
-            }
-            
-            if (question.type === 'open_ended') {
-                q.answers = question.choices.map(choice => choice.answer);
             }
             
             parsed.push(q);
@@ -258,7 +257,7 @@
             button.style.removeProperty('box-shadow');
         });
         
-        if (question.answers) {
+        if (question.answers && question.answers.length > 0) {
             question.answers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
                           FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
@@ -269,7 +268,7 @@
             });
         }
         
-        if (question.incorrectAnswers) {
+        if (question.incorrectAnswers && question.incorrectAnswers.length > 0) {
             question.incorrectAnswers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
                           FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
@@ -285,7 +284,7 @@
         const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
         
         setTimeout(() => {
-            if (question.type === 'quiz') {
+            if (question.type === 'quiz' || question.type === 'content') {
                 const key = (question.answers[0] + 1).toString();
                 window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
             } 
@@ -329,18 +328,27 @@
     }
 
     function mainLoop() {
+        // Update question number
         const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
         if (textElement) {
-            info.questionNum = parseInt(textElement.textContent) - 1;
-            updateStats();
+            const match = textElement.textContent.match(/(\d+)\/(\d+)/);
+            if (match) {
+                info.questionNum = parseInt(match[1]) - 1;
+                info.numQuestions = parseInt(match[2]);
+                updateStats();
+            }
         }
         
-        if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
-            info.lastAnsweredQuestion !== info.questionNum) {
+        // Detect new question
+        const answerButton = FindByAttributeValue("data-functional-selector", "answer-0", "button");
+        const multiSelectButton = FindByAttributeValue("data-functional-selector", "multi-select-button-0", "button");
+        
+        if ((answerButton || multiSelectButton) && info.lastAnsweredQuestion !== info.questionNum) {
             info.lastAnsweredQuestion = info.questionNum;
             onQuestionStart();
         }
         
+        // Update input lag for auto-answer
         if (settings.autoAnswer && info.ILSetQuestion !== info.questionNum) {
             const incrementElement = FindByAttributeValue("data-functional-selector", "score-increment", "span");
             if (incrementElement) {
@@ -908,7 +916,7 @@
                 const question = questions[info.questionNum];
                 if (!question || !question.answers || question.answers.length === 0) return;
                 
-                if (question.type === 'quiz') {
+                if (question.type === 'quiz' || question.type === 'content') {
                     const key = (question.answers[0] + 1).toString();
                     window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
                 } 
