@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         KaHack! Smooth Performance
-// @version      1.6.1
+// @version      1.6.2
 // @namespace    https://github.com/jokeri2222
 // @description  Optimized Kahoot hack with lightweight effects and improved UI
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
@@ -15,7 +15,7 @@
     'use strict';
 
     // Configuration
-    const Version = '1.6.1';
+    const Version = '1.6.2';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -224,8 +224,8 @@
         const parsed = [];
         questionsJson.forEach(question => {
             const q = { 
-                type: question.type, 
-                time: question.time,
+                type: question.type || 'quiz', // Default to quiz if type not specified
+                time: question.time || 20000,  // Default time if not specified
                 answers: [],
                 incorrectAnswers: []
             };
@@ -267,45 +267,34 @@
                 }
             });
         }
-        
-        if (question.incorrectAnswers && question.incorrectAnswers.length > 0) {
-            question.incorrectAnswers.forEach(answer => {
-                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
-                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
-                if (btn) {
-                    btn.style.backgroundColor = neon.incorrect;
-                    btn.style.boxShadow = neon.glow.incorrect;
-                }
-            });
-        }
     }
 
-    function answerQuestion(question, time) {
-        const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
+    function answerQuestion(question) {
+        if (!question || !question.answers || question.answers.length === 0) return;
         
-        setTimeout(() => {
-            if (question.type === 'quiz' || question.type === 'content') {
-                const key = (question.answers[0] + 1).toString();
-                window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
-            } 
-            else if (question.type === 'multiple_select_quiz') {
-                question.answers.forEach(answer => {
-                    const key = (answer + 1).toString();
-                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
-                });
-                
-                setTimeout(() => {
-                    const submitBtn = FindByAttributeValue("data-functional-selector", "multi-select-submit-button", "button");
-                    if (submitBtn) submitBtn.click();
-                }, 0);
-            }
+        if (question.type === 'quiz' || question.type === 'content') {
+            const key = (question.answers[0] + 1).toString();
+            const event = new KeyboardEvent('keydown', { key: key });
+            window.dispatchEvent(event);
+        } 
+        else if (question.type === 'multiple_select_quiz') {
+            question.answers.forEach(answer => {
+                const key = (answer + 1).toString();
+                const event = new KeyboardEvent('keydown', { key: key });
+                window.dispatchEvent(event);
+            });
             
-            info.totalAnswered++;
-            info.streak++;
-            if (info.streak > info.highestStreak) info.highestStreak = info.streak;
-            info.totalCorrect++;
-            updateStats();
-        }, time - delay);
+            setTimeout(() => {
+                const submitBtn = FindByAttributeValue("data-functional-selector", "multi-select-submit-button", "button");
+                if (submitBtn) submitBtn.click();
+            }, 50);
+        }
+        
+        info.totalAnswered++;
+        info.streak++;
+        if (info.streak > info.highestStreak) info.highestStreak = info.streak;
+        info.totalCorrect++;
+        updateStats();
     }
 
     function onQuestionStart() {
@@ -316,9 +305,9 @@
             highlightAnswers(question);
         }
         
-        if (settings.autoAnswer && question.answers && question.answers.length > 0) {
+        if (settings.autoAnswer) {
             const answerTime = (question.time - question.time / (500 / (settings.PPT - 500))) - settings.inputLag;
-            answerQuestion(question, answerTime);
+            setTimeout(() => answerQuestion(question), answerTime);
         }
     }
 
@@ -382,7 +371,7 @@
             position: 'fixed',
             top: '20px',
             left: '20px',
-            width: '350px',
+            width: '320px', // Reduced width to prevent overflow
             maxHeight: '70vh',
             backgroundColor: neon.primary,
             borderRadius: '10px',
@@ -515,10 +504,10 @@
         // Create Content Container
         const content = document.createElement('div');
         Object.assign(content.style, {
-            padding: '15px',
+            padding: '12px', // Reduced padding
             display: 'flex',
             flexDirection: 'column',
-            gap: '15px',
+            gap: '12px', // Reduced gap
             backgroundColor: neon.primary
         });
 
@@ -526,7 +515,7 @@
         const quizIdSection = createSection('QUIZ ID');
         const inputBox = document.createElement('input');
         Object.assign(inputBox.style, {
-            width: '100%',
+            width: 'calc(100% - 16px)', // Adjusted width
             padding: '8px',
             borderRadius: '6px',
             border: '1px solid #555',
@@ -914,29 +903,7 @@
             if (e.key.toLowerCase() === 'w' && e.altKey && info.questionNum !== -1) {
                 e.preventDefault();
                 const question = questions[info.questionNum];
-                if (!question || !question.answers || question.answers.length === 0) return;
-                
-                if (question.type === 'quiz' || question.type === 'content') {
-                    const key = (question.answers[0] + 1).toString();
-                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
-                } 
-                else if (question.type === 'multiple_select_quiz') {
-                    question.answers.forEach(answer => {
-                        const key = (answer + 1).toString();
-                        window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
-                    });
-                    
-                    setTimeout(() => {
-                        const submitBtn = FindByAttributeValue("data-functional-selector", "multi-select-submit-button", "button");
-                        if (submitBtn) submitBtn.click();
-                    }, 50);
-                }
-                
-                info.totalAnswered++;
-                info.streak++;
-                if (info.streak > info.highestStreak) info.highestStreak = info.streak;
-                info.totalCorrect++;
-                updateStats();
+                answerQuestion(question);
             }
             
             // ALT+S - Show answers while held
