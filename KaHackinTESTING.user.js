@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         KaHack! Neon Edition
-// @version      7.0.1
+// @name         KaHack! Neon Performance
+// @version      7.1.0
 // @namespace    https://github.com/jokeri2222
-// @description  Ultimate Kahoot hack with neon effects and flawless functionality
+// @description  Optimized Kahoot hack with neon UI and flawless functionality
 // @match        https://kahoot.it/*
 // @grant        none
 // ==/UserScript==
@@ -10,10 +10,8 @@
 (function() {
     'use strict';
 
-    // ======================
-    // NEON CONFIGURATION
-    // ======================
-    const Version = '7.0.1';
+    // Configuration
+    const Version = '7.1.0';
     let questions = [];
     const info = {
         numQuestions: 0,
@@ -64,6 +62,7 @@
         minimize: '#7f7fff',
         bot: '#00ffff',
         host: '#ff00ff',
+        rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
         glow: {
             correct: '0 0 15px #00ff88, 0 0 30px #00ff8840',
             incorrect: '0 0 15px #ff3860, 0 0 30px #ff386040',
@@ -153,14 +152,12 @@
             );
             
             buttons.forEach(button => {
-                if (button) {
-                    const hue = Math.floor(Math.random() * 360);
-                    button.style.cssText = `
-                        background-color: hsl(${hue}, 100%, 50%) !important;
-                        transition: background-color ${settings.rainbowSpeed/1000}s ease !important;
-                        box-shadow: 0 0 10px hsl(${hue}, 100%, 50%) !important;
-                    `;
-                }
+                const randomColor = neon.rainbow[Math.floor(Math.random() * neon.rainbow.length)];
+                button.style.cssText = `
+                    background-color: ${randomColor} !important;
+                    transition: background-color ${settings.rainbowSpeed/1000}s ease !important;
+                    box-shadow: 0 0 10px ${randomColor} !important;
+                `;
             });
         }
         
@@ -181,16 +178,14 @@
             'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
         );
         buttons.forEach(button => {
-            if (button) {
-                button.style.removeProperty('background-color');
-                button.style.removeProperty('transition');
-                button.style.removeProperty('box-shadow');
-            }
+            button.style.removeProperty('background-color');
+            button.style.removeProperty('transition');
+            button.style.removeProperty('box-shadow');
         });
     }
 
     // ======================
-    // QUIZ FUNCTIONS (FIXED)
+    // QUIZ FUNCTIONS
     // ======================
 
     function handleInputChange() {
@@ -230,13 +225,13 @@
 
     function parseQuestions(questionsJson) {
         const parsed = [];
-        questionsJson.forEach(function(question) {
+        questionsJson.forEach(question => {
             const q = { type: question.type, time: question.time };
             
             if (['quiz', 'multiple_select_quiz'].includes(question.type)) {
                 q.answers = [];
                 q.incorrectAnswers = [];
-                question.choices.forEach(function(choice, i) {
+                question.choices.forEach((choice, i) => {
                     if (choice.correct) {
                         q.answers.push(i);
                     } else {
@@ -246,9 +241,7 @@
             }
             
             if (question.type === 'open_ended') {
-                q.answers = question.choices.map(function(choice) {
-                    return choice.answer;
-                });
+                q.answers = question.choices.map(choice => choice.answer);
             }
             
             parsed.push(q);
@@ -263,15 +256,11 @@
             'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
         );
         
-        // Reset all buttons first
         answerButtons.forEach(button => {
-            if (button) {
-                button.style.removeProperty('background-color');
-                button.style.removeProperty('box-shadow');
-            }
+            button.style.removeProperty('background-color');
+            button.style.removeProperty('box-shadow');
         });
         
-        // Highlight correct answers
         if (question.answers) {
             question.answers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
@@ -283,7 +272,6 @@
             });
         }
         
-        // Highlight incorrect answers
         if (question.incorrectAnswers) {
             question.incorrectAnswers.forEach(answer => {
                 const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
@@ -315,6 +303,12 @@
                     if (submitBtn) submitBtn.click();
                 }, 0);
             }
+            
+            info.totalAnswered++;
+            info.streak++;
+            if (info.streak > info.highestStreak) info.highestStreak = info.streak;
+            info.totalCorrect++;
+            updateStats();
         }, time - delay);
     }
 
@@ -329,12 +323,6 @@
         if (settings.autoAnswer && question.answers && question.answers.length > 0) {
             const answerTime = (question.time - question.time / (500 / (settings.PPT - 500))) - settings.inputLag;
             answerQuestion(question, answerTime);
-            
-            info.totalAnswered++;
-            info.streak++;
-            if (info.streak > info.highestStreak) info.highestStreak = info.streak;
-            info.totalCorrect++;
-            updateStats();
         }
     }
 
@@ -344,21 +332,18 @@
     }
 
     function mainLoop() {
-        // Update question number
         const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
         if (textElement) {
             info.questionNum = parseInt(textElement.textContent) - 1;
             updateStats();
         }
         
-        // Detect new question
         if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
             info.lastAnsweredQuestion !== info.questionNum) {
             info.lastAnsweredQuestion = info.questionNum;
             onQuestionStart();
         }
         
-        // Update input lag for auto-answer
         if (settings.autoAnswer && info.ILSetQuestion !== info.questionNum) {
             const incrementElement = FindByAttributeValue("data-functional-selector", "score-increment", "span");
             if (incrementElement) {
@@ -368,7 +353,7 @@
                 
                 if (!isNaN(increment) && increment !== 0) {
                     const ppt = settings.PPT > 987 ? 1000 : settings.PPT;
-                    const adjustment = (ppt - increment) * 15;
+                    let adjustment = (ppt - increment) * 15;
                     
                     if (settings.inputLag + adjustment < 0) {
                         adjustment = (ppt - increment / 2) * 15;
@@ -450,9 +435,527 @@
     }
 
     // ======================
-    // UI FUNCTIONS (UNCHANGED)
+    // UI FUNCTIONS
     // ======================
-    // [Keep all the existing UI functions exactly as they were]
+
+    function createUI() {
+        // Main UI Container
+        uiElement = document.createElement('div');
+        Object.assign(uiElement.style, {
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            width: '350px',
+            maxHeight: '70vh',
+            backgroundColor: neon.primary,
+            borderRadius: '10px',
+            boxShadow: neon.glow.primary,
+            zIndex: '9999',
+            overflow: 'hidden',
+            border: `1px solid ${neon.accent}`,
+            transition: 'opacity 0.3s ease, transform 0.2s ease',
+            willChange: 'transform'
+        });
+
+        // Header with Draggable Area
+        const handle = document.createElement('div');
+        Object.assign(handle.style, {
+            padding: '12px 15px',
+            backgroundColor: neon.secondary,
+            color: neon.text,
+            cursor: 'move',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            userSelect: 'none',
+            borderBottom: `1px solid ${neon.accent}`,
+            boxShadow: neon.glow.accent
+        });
+
+        const title = document.createElement('div');
+        title.textContent = 'KaHack! Neon';
+        title.style.fontWeight = 'bold';
+        title.style.fontSize = '16px';
+        title.style.textShadow = '0 0 10px #7f7fff';
+
+        // Minimize Button
+        const minimizeButton = document.createElement('div');
+        minimizeButton.textContent = '─';
+        Object.assign(minimizeButton.style, {
+            width: '24px',
+            height: '24px',
+            backgroundColor: neon.minimize,
+            color: neon.text,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 5px #7f7fff'
+        });
+
+        // Close Button
+        const closeButton = document.createElement('div');
+        closeButton.textContent = '✕';
+        Object.assign(closeButton.style, {
+            width: '24px',
+            height: '24px',
+            backgroundColor: neon.close,
+            color: neon.text,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 5px #ff3860'
+        });
+
+        // Button Events
+        minimizeButton.addEventListener('click', function() {
+            contentWrapper.style.display = contentWrapper.style.display === 'none' ? 'block' : 'none';
+            createParticles(minimizeButton, 8, 1.5);
+        });
+
+        closeButton.addEventListener('click', function() {
+            document.body.removeChild(uiElement);
+            settings.autoAnswer = false;
+            settings.showAnswers = false;
+            stopRainbowEffect();
+            createParticles(closeButton, 10, 1.5);
+        });
+
+        // Dragging Functionality
+        handle.addEventListener('mousedown', function(e) {
+            state.isDragging = true;
+            state.dragOffsetX = e.clientX - uiElement.getBoundingClientRect().left;
+            state.dragOffsetY = e.clientY - uiElement.getBoundingClientRect().top;
+            document.body.style.userSelect = 'none';
+            uiElement.style.transform = 'scale(0.98)';
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (state.isDragging) {
+                const x = Math.max(10, Math.min(window.innerWidth - uiElement.offsetWidth - 10, e.clientX - state.dragOffsetX));
+                const y = Math.max(10, Math.min(window.innerHeight - uiElement.offsetHeight - 10, e.clientY - state.dragOffsetY));
+                
+                uiElement.style.left = `${x}px`;
+                uiElement.style.top = `${y}px`;
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (state.isDragging) {
+                state.isDragging = false;
+                document.body.style.userSelect = '';
+                uiElement.style.transform = 'scale(1)';
+                createParticles(uiElement, 15, 1.2);
+            }
+        });
+
+        // Assemble Header
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '5px';
+        buttonContainer.appendChild(minimizeButton);
+        buttonContainer.appendChild(closeButton);
+        
+        handle.appendChild(title);
+        handle.appendChild(buttonContainer);
+        uiElement.appendChild(handle);
+
+        // Create scrollable content wrapper
+        contentWrapper = document.createElement('div');
+        Object.assign(contentWrapper.style, {
+            maxHeight: 'calc(70vh - 50px)',
+            overflowY: 'auto',
+            scrollbarWidth: 'thin'
+        });
+
+        // Create Content Container
+        const content = document.createElement('div');
+        Object.assign(content.style, {
+            padding: '15px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '15px',
+            backgroundColor: neon.primary
+        });
+
+        // Quiz ID Section
+        const quizIdSection = createSection('QUIZ ID');
+        const inputBox = document.createElement('input');
+        Object.assign(inputBox.style, {
+            width: '100%',
+            padding: '8px',
+            borderRadius: '6px',
+            border: '1px solid #555',
+            backgroundColor: '#fff',
+            color: '#000',
+            fontSize: '14px',
+            transition: 'all 0.3s ease'
+        });
+        inputBox.placeholder = 'Enter Quiz ID...';
+        inputBox.addEventListener('input', handleInputChange);
+        quizIdSection.appendChild(inputBox);
+        content.appendChild(quizIdSection);
+
+        // Points Section
+        const pointsSection = createSection('POINTS PER QUESTION');
+        const pointsSliderContainer = document.createElement('div');
+        Object.assign(pointsSliderContainer.style, {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+        });
+
+        const pointsSlider = document.createElement('input');
+        pointsSlider.type = 'range';
+        pointsSlider.min = '500';
+        pointsSlider.max = '1000';
+        pointsSlider.value = settings.PPT;
+        pointsSlider.style.flex = '1';
+
+        const pointsLabel = document.createElement('span');
+        pointsLabel.textContent = settings.PPT;
+        pointsLabel.style.color = neon.text;
+        pointsLabel.style.minWidth = '40px';
+        pointsLabel.style.textShadow = '0 0 5px #7f7fff';
+
+        pointsSlider.addEventListener('input', function() {
+            settings.PPT = +this.value;
+            pointsLabel.textContent = settings.PPT;
+        });
+
+        pointsSliderContainer.appendChild(pointsSlider);
+        pointsSliderContainer.appendChild(pointsLabel);
+        pointsSection.appendChild(pointsSliderContainer);
+        content.appendChild(pointsSection);
+
+        // Answering Section
+        const answeringSection = createSection('ANSWERING');
+        
+        answeringSection.appendChild(createToggle('Auto Answer', settings.autoAnswer, function(checked) {
+            settings.autoAnswer = checked;
+            info.ILSetQuestion = info.questionNum;
+            optimizePerformance();
+        }));
+
+        answeringSection.appendChild(createToggle('Show Answers', settings.showAnswers, function(checked) {
+            settings.showAnswers = checked;
+            if (!settings.showAnswers && !state.isAltSPressed) {
+                resetAnswerColors();
+            }
+        }));
+
+        content.appendChild(answeringSection);
+
+        // Rainbow Section
+        const rainbowSection = createSection('RAINBOW MODE');
+        const rainbowContainer = document.createElement('div');
+        Object.assign(rainbowContainer.style, {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px'
+        });
+
+        const rainbowSlider = document.createElement('input');
+        rainbowSlider.type = 'range';
+        rainbowSlider.min = '50';
+        rainbowSlider.max = '1000';
+        rainbowSlider.value = settings.rainbowSpeed;
+        rainbowSlider.style.flex = '1';
+
+        const rainbowLabel = document.createElement('span');
+        rainbowLabel.textContent = settings.rainbowSpeed + 'ms';
+        rainbowLabel.style.color = neon.text;
+        rainbowLabel.style.minWidth = '50px';
+        rainbowLabel.style.textShadow = '0 0 5px #7f7fff';
+
+        rainbowSlider.addEventListener('input', function() {
+            settings.rainbowSpeed = +this.value;
+            rainbowLabel.textContent = settings.rainbowSpeed + 'ms';
+            if (state.rainbowInterval) {
+                startRainbowEffect();
+            }
+        });
+
+        const rainbowButton = document.createElement('button');
+        rainbowButton.textContent = 'Toggle Rainbow';
+        Object.assign(rainbowButton.style, {
+            width: '100%',
+            padding: '8px',
+            marginTop: '10px',
+            backgroundColor: neon.accent,
+            color: neon.text,
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #7f7fff'
+        });
+        
+        rainbowButton.addEventListener('click', function() {
+            if (state.rainbowInterval) {
+                stopRainbowEffect();
+                rainbowButton.textContent = 'Enable Rainbow';
+            } else {
+                startRainbowEffect();
+                rainbowButton.textContent = 'Disable Rainbow';
+            }
+            createParticles(rainbowButton, 10, 1.2);
+        });
+        
+        rainbowContainer.appendChild(rainbowSlider);
+        rainbowContainer.appendChild(rainbowLabel);
+        rainbowSection.appendChild(rainbowContainer);
+        rainbowSection.appendChild(rainbowButton);
+        content.appendChild(rainbowSection);
+
+        // Bot Army Section
+        const botSection = createSection('BOT ARMY');
+        
+        const botButton = document.createElement('button');
+        botButton.textContent = 'Start Mass Join';
+        Object.assign(botButton.style, {
+            width: '100%',
+            padding: '8px',
+            backgroundColor: neon.bot,
+            color: '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginBottom: '10px',
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #00ffff'
+        });
+        botButton.addEventListener('click', startMassJoin);
+        botButton.addEventListener('mouseenter', () => botButton.style.transform = 'scale(1.02)');
+        botButton.addEventListener('mouseleave', () => botButton.style.transform = 'scale(1)');
+        botSection.appendChild(botButton);
+
+        const hostButton = document.createElement('button');
+        hostButton.textContent = 'Sniff Host Token';
+        Object.assign(hostButton.style, {
+            width: '100%',
+            padding: '8px',
+            backgroundColor: neon.host,
+            color: '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease',
+            boxShadow: '0 0 10px #ff00ff'
+        });
+        hostButton.addEventListener('click', sniffHostToken);
+        hostButton.addEventListener('mouseenter', () => hostButton.style.transform = 'scale(1.02)');
+        hostButton.addEventListener('mouseleave', () => hostButton.style.transform = 'scale(1)');
+        botSection.appendChild(hostButton);
+
+        content.appendChild(botSection);
+
+        // Keybinds Section
+        const keybindsSection = createSection('KEYBINDS');
+        const keybindsList = document.createElement('div');
+        keybindsList.style.color = neon.text;
+        keybindsList.style.fontSize = '13px';
+        keybindsList.style.lineHeight = '1.5';
+        
+        const keybinds = [
+            ['ALT + H', 'Toggle UI visibility'],
+            ['ALT + W', 'Answer correctly'],
+            ['ALT + S', 'Show answers (while held)'],
+            ['ALT + R', 'Rainbow mode (while held)'],
+            ['Shift', 'Quick hide/show'],
+            ['ALT + B', 'Mass join bots'],
+            ['ALT + T', 'Sniff host token']
+        ];
+        
+        keybinds.forEach(([key, desc]) => {
+            const item = document.createElement('div');
+            item.style.display = 'flex';
+            item.style.justifyContent = 'space-between';
+            
+            const keyElem = document.createElement('span');
+            keyElem.textContent = key;
+            keyElem.style.fontWeight = 'bold';
+            keyElem.style.textShadow = '0 0 5px #7f7fff';
+            
+            const descElem = document.createElement('span');
+            descElem.textContent = desc;
+            
+            item.appendChild(keyElem);
+            item.appendChild(descElem);
+            keybindsList.appendChild(item);
+        });
+        
+        keybindsSection.appendChild(keybindsList);
+        content.appendChild(keybindsSection);
+
+        // Stats Section
+        const statsSection = createSection('STATISTICS');
+        
+        statsSection.appendChild(createStatElement('Question: 0/0'));
+        statsSection.appendChild(createStatElement('Streak: 0 (Highest: 0)'));
+        statsSection.appendChild(createStatElement('Correct: 0/0 (0%)'));
+        statsSection.appendChild(createStatElement('Active Bots: 0'));
+        statsSection.appendChild(createStatElement('Host Token: None'));
+        statsSection.appendChild(createStatElement('Input lag: 100ms'));
+        
+        content.appendChild(statsSection);
+
+        // Final Assembly
+        contentWrapper.appendChild(content);
+        uiElement.appendChild(contentWrapper);
+    }
+
+    function createSection(titleText) {
+        const section = document.createElement('div');
+        Object.assign(section.style, {
+            backgroundColor: neon.secondary,
+            borderRadius: '8px',
+            padding: '12px',
+            border: `1px solid ${neon.accent}`,
+            transition: 'transform 0.2s ease',
+            boxShadow: neon.glow.accent
+        });
+
+        section.addEventListener('mouseenter', () => {
+            section.style.transform = 'translateY(-2px)';
+            createParticles(section, 3);
+        });
+        section.addEventListener('mouseleave', () => {
+            section.style.transform = 'translateY(0)';
+        });
+
+        const header = document.createElement('h3');
+        header.textContent = titleText;
+        Object.assign(header.style, {
+            margin: '0 0 10px 0',
+            color: neon.text,
+            fontSize: '16px',
+            textShadow: '0 0 5px #7f7fff'
+        });
+
+        section.appendChild(header);
+        return section;
+    }
+
+    function createToggle(labelText, checked, onChange) {
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            margin: '8px 0'
+        });
+
+        const label = document.createElement('span');
+        label.textContent = labelText;
+        label.style.color = neon.text;
+        label.style.fontSize = '14px';
+        label.style.textShadow = '0 0 5px #7f7fff';
+
+        const toggle = document.createElement('label');
+        Object.assign(toggle.style, {
+            position: 'relative',
+            display: 'inline-block',
+            width: '50px',
+            height: '24px'
+        });
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = checked;
+        Object.assign(input.style, {
+            opacity: '0',
+            width: '0',
+            height: '0'
+        });
+
+        const slider = document.createElement('span');
+        Object.assign(slider.style, {
+            position: 'absolute',
+            cursor: 'pointer',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: checked ? neon.correct : neon.incorrect,
+            transition: '.4s',
+            borderRadius: '24px',
+            boxShadow: checked ? neon.glow.correct : neon.glow.incorrect
+        });
+
+        const sliderBefore = document.createElement('span');
+        Object.assign(sliderBefore.style, {
+            position: 'absolute',
+            content: '""',
+            height: '16px',
+            width: '16px',
+            left: checked ? '26px' : '4px',
+            bottom: '4px',
+            backgroundColor: '#fff',
+            transition: '.4s',
+            borderRadius: '50%',
+            boxShadow: '0 0 5px rgba(0,0,0,0.3)'
+        });
+
+        input.addEventListener('change', function() {
+            onChange(this.checked);
+            slider.style.backgroundColor = this.checked ? neon.correct : neon.incorrect;
+            slider.style.boxShadow = this.checked ? neon.glow.correct : neon.glow.incorrect;
+            sliderBefore.style.left = this.checked ? '26px' : '4px';
+            createParticles(slider, 5);
+        });
+
+        toggle.appendChild(input);
+        toggle.appendChild(slider);
+        slider.appendChild(sliderBefore);
+        container.appendChild(label);
+        container.appendChild(toggle);
+
+        return container;
+    }
+
+    function createStatElement(text) {
+        const el = document.createElement('div');
+        el.textContent = text;
+        el.style.color = neon.text;
+        el.style.textShadow = '0 0 5px #7f7fff';
+        el.id = 'stat-' + text.split(':')[0].toLowerCase().trim().replace(' ', '-');
+        return el;
+    }
+
+    function updateStats() {
+        const stats = [
+            `Question: ${info.questionNum + 1}/${info.numQuestions}`,
+            `Streak: ${info.streak} (Highest: ${info.highestStreak})`,
+            `Correct: ${info.totalCorrect}/${info.totalAnswered} (${info.totalAnswered ? Math.round((info.totalCorrect / info.totalAnswered) * 100) : 0}%)`,
+            `Active Bots: ${info.botCount}`,
+            `Host Token: ${info.hostToken ? 'Captured' : 'None'}`,
+            `Input lag: ${settings.inputLag}ms`
+        ];
+        
+        stats.forEach(stat => {
+            const id = 'stat-' + stat.split(':')[0].toLowerCase().trim().replace(' ', '-');
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = stat;
+                if (id.includes('host-token') && info.hostToken) {
+                    el.style.color = neon.host;
+                    el.style.textShadow = '0 0 10px #ff00ff';
+                } else if (id.includes('active-bots') && info.botCount > 0) {
+                    el.style.color = neon.bot;
+                    el.style.textShadow = '0 0 10px #00ffff';
+                }
+            }
+        });
+    }
+
     // ======================
     // INITIALIZATION
     // ======================
