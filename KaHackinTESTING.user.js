@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         KaHack! Neon Pro
-// @version      2.2.0
+// @version      2.2.1
 // @namespace    https://github.com/jokeri2222
 // @description  Ultra-smooth Kahoot hack with optimized neon UI
 // @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Neon-Pro.meta.js
@@ -17,7 +17,7 @@
     // ======================
     // CORE CONFIGURATION
     // ======================
-    const Version = '2.2.0';
+    const Version = '2.2.1';
     const colors = {
         primary: 'rgba(15, 5, 30, 0.97)',
         secondary: 'rgba(25, 10, 50, 0.95)',
@@ -312,7 +312,10 @@
             transition: 'all 0.2s ease'
         });
 
-        btn.addEventListener('click', onClick);
+        btn.addEventListener('click', () => {
+            onClick();
+            createParticles(btn, 5);
+        });
         return btn;
     }
 
