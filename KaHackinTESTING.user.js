@@ -191,7 +191,7 @@
     });
 
     const title = document.createElement('div');
-    title.textContent = 'KaHack! Smooth';
+    title.textContent = 'Don´t get caught';
     title.style.fontWeight = 'bold';
     title.style.fontSize = '16px';
 
