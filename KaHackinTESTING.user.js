@@ -1,11 +1,11 @@
 // ==UserScript==
-// @name         KaHack! Quantum Pro
-// @version      3.1.0
+// @name         KaHack! Smooth Performance
+// @version      1.5.0
 // @namespace    https://github.com/jokeri2222
-// @description  Ultimate Kahoot hack with quantum features
-// @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack-Quantum-Pro.meta.js
-// @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack-Quantum-Pro.user.js
-// @author       jokeri2222
+// @description  Optimized Kahoot hack with lightweight effects
+// @updateURL    https://github.com/jokeri2222/KaHack/raw/main/KaHack!.meta.js
+// @downloadURL  https://github.com/jokeri2222/KaHack/raw/main/KaHack!.user.js
+// @author       jokeri2222; https://github.com/jokeri2222
 // @match        https://kahoot.it/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=kahoot.it
 // @grant        none
@@ -14,450 +14,871 @@
 (function() {
     'use strict';
 
-    // ======================
-    // QUANTUM CORE CONFIG
-    // ======================
-    const Quantum = {
-        VERSION: '3.1.0',
-        STATE: {
-            questions: [],
-            session: {
-                score: 0,
-                streak: 0,
-                maxStreak: 0,
-                performance: 100,
-                accuracy: 100,
-                latency: 0
-            },
-            modes: {
-                timeTravel: false,
-                ghostMode: false,
-                aiAssist: true,
-                quantumLock: true
-            },
-            elements: new Map(),
-            theme: 'cyberpunk',
-            security: {
-                antiTamper: true,
-                selfHealing: true,
-                cloak: true
-            }
-        },
-        CONFIG: {
-            colors: {
-                primary: '#000b1f',
-                secondary: '#00172d',
-                accent: '#00f7ff',
-                text: '#e6f1ff',
-                correct: '#00ff9d',
-                incorrect: '#ff3860',
-                cyber: ['#00f7ff', '#ff00ff', '#ff5500']
-            },
-            sounds: {
-                activate: 'data:audio/wav;base64,UklGRl9v...',
-                notification: 'data:audio/wav;base64,UklGRk9...'
-            },
-            keys: {
-                toggleUI: 'Alt+H',
-                ghostMode: 'Alt+G',
-                timeTravel: 'Alt+T'
-            }
-        }
+    // Configuration
+    const Version = '1.5.0';
+    let questions = [];
+    const info = {
+        numQuestions: 0,
+        questionNum: -1,
+        lastAnsweredQuestion: -1,
+        defaultIL: true,
+        ILSetQuestion: -1
+    };
+    let PPT = 950;
+    let Answered_PPT = 950;
+    let autoAnswer = false;
+    let showAnswers = false;
+    let inputLag = 100;
+    let isAltSPressed = false;
+    let isAltHPressed = false;
+    let isAltRPressed = false;
+    let rainbowInterval = null;
+    let rainbowSpeed = 300;
+
+    // Colors with simplified neon
+    const colors = {
+        primary: '#0d0d1a',
+        secondary: '#12122b',
+        accent: '#1a1a4a',
+        text: '#e6e6ff',
+        correct: '#00ff88',
+        incorrect: '#ff3860',
+        close: '#ff3860',
+        minimize: '#7f7fff',
+        hoverGlow: '0 0 8px rgba(100, 220, 255, 0.5)',
+        rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
+        particleColors: ['#00ffff', '#ff00ff', '#ffff00']
     };
 
-    // ======================
-    // QUANTUM INITIALIZATION
-    // ======================
-    function initQuantumCore() {
-        injectSecuritySystems();
-        createHypervisorUI();
-        setupEventListeners();
-        activateAIEngine();
-        startPerformanceMonitor();
+    // Helper function
+    function FindByAttributeValue(attribute, value, element_type) {
+        element_type = element_type || "*";
+        const All = document.getElementsByTagName(element_type);
+        for (let i = 0; i < All.length; i++) {
+            if (All[i].getAttribute(attribute) === value) return All[i];
+        }
+        return null;
     }
 
-    // ======================
-    // SECURITY SYSTEMS
-    // ======================
-    function injectSecuritySystems() {
-        // Anti-tamper protection
-        const tamperCheck = setInterval(() => {
-            if (!document.getElementById('quantum-hypervisor')) {
-                location.reload();
-            }
-        }, 1000);
-
-        // Code obfuscation layer
-        const realConsole = console.log;
-        console.log = function(...args) {
-            if (Quantum.STATE.security.cloak) {
-                realConsole.apply(console, ['[Quantum] System nominal']);
-                return;
-            }
-            realConsole.apply(console, args);
-        };
-
-        // Self-healing mechanism
-        document.addEventListener('DOMNodeRemoved', (e) => {
-            if (e.target.id === 'quantum-hypervisor') {
-                createHypervisorUI();
-            }
-        });
-    }
-
-    // ======================
-    // HYPERVISOR UI
-    // ======================
-    function createHypervisorUI() {
-        const hypervisor = document.createElement('div');
-        hypervisor.id = 'quantum-hypervisor';
-        Object.assign(hypervisor.style, {
-            position: 'fixed',
-            top: '10px',
-            right: '10px',
-            width: '400px',
-            background: 'rgba(0,8,15,0.95)',
-            border: '2px solid #00f7ff',
-            borderRadius: '10px',
-            boxShadow: '0 0 30px rgba(0,247,255,0.4)',
-            zIndex: '99999',
-            backdropFilter: 'blur(5px)',
-            color: Quantum.CONFIG.colors.text,
-            fontFamily: '"Courier New", monospace',
-            padding: '20px'
-        });
-
-        hypervisor.innerHTML = `
-            <div class="quantum-header">
-                <h2 style="margin:0;color:${Quantum.CONFIG.colors.accent}">QUANTUM HYPERVISOR v${Quantum.VERSION}</h2>
-                <div class="status-bar">
-                    <span class="ai-status" style="color:#0f0">● AI ONLINE</span>
-                    <span class="security-status" style="color:#0ff">● SHIELD ACTIVE</span>
-                </div>
-            </div>
+    // Lightweight particle effect
+    function createParticles(element, count = 5) {
+        const rect = element.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        for (let i = 0; i < count; i++) {
+            const particle = document.createElement('div');
+            const size = Math.random() * 4 + 2;
+            const color = colors.particleColors[Math.floor(Math.random() * colors.particleColors.length)];
             
-            <div class="quantum-dashboard">
-                <div class="stats-container">
-                    <div class="stat">
-                        <label>SCORE</label>
-                        <div class="value" id="quantum-score">0</div>
-                    </div>
-                    <div class="stat">
-                        <label>STREAK</label>
-                        <div class="value" id="quantum-streak">0x</div>
-                    </div>
-                    <div class="stat">
-                        <label>ACCURACY</label>
-                        <div class="value" id="quantum-accuracy">100%</div>
-                    </div>
-                </div>
-                
-                <div class="quantum-controls">
-                    <button class="quantum-btn" data-action="timeTravel">
-                        <span class="icon">⏳</span> TIME TRAVEL
-                    </button>
-                    <button class="quantum-btn" data-action="ghostMode">
-                        <span class="icon">👻</span> GHOST MODE
-                    </button>
-                    <button class="quantum-btn" data-action="aiToggle">
-                        <span class="icon">🤖</span> TOGGLE AI
-                    </button>
-                </div>
-                
-                <div class="performance-graph">
-                    <div class="graph-label">SYSTEM PERFORMANCE</div>
-                    <div class="graph-container" id="performance-graph"></div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(hypervisor);
-        Quantum.STATE.elements.set('hypervisor', hypervisor);
-        injectHypervisorCSS();
-    }
-
-    function injectHypervisorCSS() {
-        const style = document.createElement('style');
-        style.textContent = `
-            .quantum-btn {
-                background: ${Quantum.CONFIG.colors.secondary};
-                border: 1px solid ${Quantum.CONFIG.colors.accent};
-                color: ${Quantum.CONFIG.colors.text};
-                padding: 12px;
-                margin: 8px 0;
-                cursor: pointer;
-                transition: all 0.3s;
-                border-radius: 5px;
-                width: 100%;
-                display: flex;
-                align-items: center;
-                gap: 10px;
-            }
-            
-            .quantum-btn:hover {
-                background: ${Quantum.CONFIG.colors.primary};
-                box-shadow: 0 0 15px ${Quantum.CONFIG.colors.accent};
-                transform: translateY(-2px);
-            }
-            
-            .stat {
-                background: rgba(0,40,80,0.3);
-                padding: 15px;
-                border-radius: 8px;
-                text-align: center;
-                flex: 1;
-            }
-            
-            .stat .value {
-                font-size: 24px;
-                color: ${Quantum.CONFIG.colors.accent};
-                font-weight: bold;
-                margin-top: 5px;
-            }
-            
-            .performance-graph {
-                margin-top: 20px;
-                height: 100px;
-                background: rgba(0,0,0,0.3);
-                border-radius: 5px;
-                position: relative;
-                overflow: hidden;
-            }
-        `;
-        document.head.appendChild(style);
-    }
-
-    // ======================
-    // QUANTUM FEATURES
-    // ======================
-    const QuantumEngine = {
-        enableTimeTravel: function() {
-            if (!Quantum.STATE.modes.timeTravel) return;
-            
-            const previewContainer = document.createElement('div');
-            previewContainer.id = 'time-travel-preview';
-            // Time travel implementation
-        },
-
-        activateGhostMode: function() {
-            document.body.style.filter = 'blur(2px)';
-            const elements = document.querySelectorAll('body > *:not(#quantum-hypervisor)');
-            elements.forEach(el => el.style.opacity = '0.2');
-        },
-
-        toggleAI: function(state) {
-            Quantum.STATE.modes.aiAssist = state ?? !Quantum.STATE.modes.aiAssist;
-            this.updateAIStatus();
-        },
-
-        predictAnswer: async function(question) {
-            // AI prediction logic
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve({
-                        answer: Math.floor(Math.random() * 4),
-                        confidence: Math.random() * 100
-                    });
-                }, 50);
+            Object.assign(particle.style, {
+                position: 'fixed',
+                width: `${size}px`,
+                height: `${size}px`,
+                backgroundColor: color,
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: '10000',
+                left: `${centerX}px`,
+                top: `${centerY}px`,
+                opacity: '0.8',
+                transform: 'translate(-50%, -50%)',
+                willChange: 'transform, opacity'
             });
-        },
-
-        updateAIStatus: function() {
-            const statusElement = document.querySelector('.ai-status');
-            if (statusElement) {
-                statusElement.textContent = Quantum.STATE.modes.aiAssist ? '● AI ACTIVE' : '● AI STANDBY';
-                statusElement.style.color = Quantum.STATE.modes.aiAssist ? '#0f0' : '#ff0';
-            }
-        }
-    };
-
-    // ======================
-    // CORE HACKING SYSTEM
-    // ======================
-    const HackingSystem = {
-        questions: [],
-        currentQuestion: null,
-        uiElements: {
-            quizIdInput: null,
-            pointsSlider: null,
-            rainbowToggle: null
-        },
-
-        init: function() {
-            this.createMainUI();
-            this.setupAnswerSystem();
-            this.setupQuestionHandler();
-        },
-
-        createMainUI: function() {
-            const mainUI = document.createElement('div');
-            mainUI.id = 'kahack-main-ui';
-            // ... [Previous UI Creation Logic] ...
-            document.body.appendChild(mainUI);
-        },
-
-        setupAnswerSystem: function() {
-            document.addEventListener('keydown', (e) => {
-                if (e.altKey) {
-                    switch(e.key.toLowerCase()) {
-                        case 'w': this.answerCurrentQuestion(); break;
-                        case 's': this.highlightAnswers(); break;
-                        case 'r': this.toggleRainbow(); break;
-                    }
+            
+            document.body.appendChild(particle);
+            
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 20 + 10;
+            const duration = Math.random() * 600 + 400;
+            
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = elapsed / duration;
+                
+                if (progress >= 1) {
+                    particle.remove();
+                    return;
                 }
-            });
-        },
-
-        answerCurrentQuestion: function() {
-            // Answering logic
-        },
-
-        highlightAnswers: function() {
-            // Answer highlighting logic
-        },
-
-        toggleRainbow: function() {
-            // Rainbow mode logic
+                
+                const x = centerX + Math.cos(angle) * distance * progress;
+                const y = centerY + Math.sin(angle) * distance * progress;
+                
+                particle.style.transform = `translate(${x - centerX}px, ${y - centerY}px)`;
+                particle.style.opacity = 0.8 * (1 - progress);
+                
+                requestAnimationFrame(animate);
+            }
+            
+            requestAnimationFrame(animate);
         }
-    };
+    }
 
-    // ======================
-    // PERFORMANCE SYSTEM
-    // ======================
-    function startPerformanceMonitor() {
-        setInterval(() => {
-            Quantum.STATE.session.performance = Math.min(100, 
-                98 + Math.random() * 2 - Quantum.STATE.session.latency / 10
+    // Rainbow mode (optimized)
+    function startRainbowEffect() {
+        if (rainbowInterval) clearInterval(rainbowInterval);
+        
+        function applyRainbowColors() {
+            const buttons = document.querySelectorAll(
+                'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
             );
             
-            Quantum.STATE.session.latency = Math.random() * 20;
-            updatePerformanceDisplay();
-        }, 2000);
-    }
-
-    function updatePerformanceDisplay() {
-        const graph = document.getElementById('performance-graph');
-        if (graph) {
-            graph.style.background = `
-                linear-gradient(
-                    to right,
-                    ${Quantum.CONFIG.colors.accent} ${Quantum.STATE.session.performance}%,
-                    rgba(0,247,255,0.2) ${Quantum.STATE.session.performance}%
-                )
-            `;
+            buttons.forEach(button => {
+                const randomColor = colors.rainbow[Math.floor(Math.random() * colors.rainbow.length)];
+                button.style.cssText = `
+                    background-color: ${randomColor} !important;
+                    transition: background-color ${rainbowSpeed/1000}s ease !important;
+                `;
+            });
         }
+        
+        applyRainbowColors();
+        rainbowInterval = setInterval(applyRainbowColors, rainbowSpeed);
     }
 
-    // ======================
-    // EVENT SYSTEM
-    // ======================
-    function setupEventListeners() {
-        // Hypervisor controls
-        document.querySelectorAll('.quantum-btn').forEach(btn => {
-            btn.addEventListener('click', handleQuantumControl);
-        });
+    function stopRainbowEffect() {
+        if (rainbowInterval) {
+            clearInterval(rainbowInterval);
+            rainbowInterval = null;
+        }
+        resetAnswerColors();
+    }
 
-        // Keybind system
-        document.addEventListener('keydown', (e) => {
-            if (e.altKey) {
-                switch(e.key.toLowerCase()) {
-                    case 'q': QuantumEngine.toggleAI(); break;
-                    case 'g': QuantumEngine.activateGhostMode(); break;
-                    case 't': QuantumEngine.enableTimeTravel(); break;
-                }
-            }
+    function resetAnswerColors() {
+        const buttons = document.querySelectorAll(
+            'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
+        );
+        buttons.forEach(button => {
+            button.style.removeProperty('background-color');
+            button.style.removeProperty('transition');
         });
     }
 
-    function handleQuantumControl(e) {
-        const action = e.target.dataset.action;
-        switch(action) {
-            case 'timeTravel': 
-                Quantum.STATE.modes.timeTravel = !Quantum.STATE.modes.timeTravel;
-                break;
-            case 'ghostMode':
-                Quantum.STATE.modes.ghostMode = !Quantum.STATE.modes.ghostMode;
-                break;
-            case 'aiToggle':
-                QuantumEngine.toggleAI();
-                break;
-        }
-    }
-
-    // ======================
-    // MAIN EXECUTION
-    // ======================
-    window.addEventListener('load', () => {
-        initQuantumCore();
-        HackingSystem.init();
-        Object.freeze(Quantum);
+    // Create optimized UI
+    const uiElement = document.createElement('div');
+    uiElement.className = 'kahack-ui';
+    Object.assign(uiElement.style, {
+        position: 'fixed',
+        top: '20px',
+        left: '20px',
+        width: '350px',
+        backgroundColor: colors.primary,
+        borderRadius: '10px',
+        boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)',
+        zIndex: '9999',
+        overflow: 'hidden',
+        border: `1px solid ${colors.accent}`,
+        transition: 'opacity 0.3s ease',
+        willChange: 'transform'
     });
 
-    // ======================
-    // PRESERVATION SEQUENCE
-    // ======================
-    const Preservation = {
-        lock: function() {
-            Object.defineProperty(window, 'Quantum', {
-                value: Quantum,
-                writable: false,
-                configurable: false
+    // Create header
+    const handle = document.createElement('div');
+    handle.className = 'kahack-header';
+    Object.assign(handle.style, {
+        padding: '12px 15px',
+        backgroundColor: colors.secondary,
+        color: colors.text,
+        cursor: 'move',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        userSelect: 'none',
+        borderBottom: `1px solid ${colors.accent}`,
+        WebkitUserSelect: 'none'
+    });
+
+    const title = document.createElement('div');
+    title.textContent = 'KaHack! Smooth';
+    title.style.fontWeight = 'bold';
+    title.style.fontSize = '16px';
+
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.gap = '5px';
+
+    const minimizeButton = document.createElement('div');
+    minimizeButton.textContent = '─';
+    Object.assign(minimizeButton.style, {
+        width: '24px',
+        height: '24px',
+        backgroundColor: colors.minimize,
+        color: colors.text,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '14px',
+        transition: 'transform 0.2s ease'
+    });
+
+    const closeButton = document.createElement('div');
+    closeButton.textContent = '✕';
+    Object.assign(closeButton.style, {
+        width: '24px',
+        height: '24px',
+        backgroundColor: colors.close,
+        color: colors.text,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease'
+    });
+
+    // Button hover effects
+    [minimizeButton, closeButton].forEach(btn => {
+        btn.addEventListener('mouseenter', () => {
+            btn.style.transform = 'scale(1.1)';
+            createParticles(btn, 3);
+        });
+        btn.addEventListener('mouseleave', () => {
+            btn.style.transform = 'scale(1)';
+        });
+        btn.addEventListener('click', () => {
+            createParticles(btn, 5);
+        });
+    });
+
+    buttonContainer.appendChild(minimizeButton);
+    buttonContainer.appendChild(closeButton);
+    handle.appendChild(title);
+    handle.appendChild(buttonContainer);
+    uiElement.appendChild(handle);
+
+    // Create content container
+    const content = document.createElement('div');
+    content.className = 'kahack-content';
+    Object.assign(content.style, {
+        padding: '15px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '15px',
+        backgroundColor: colors.primary
+    });
+
+    // Create section function
+    function createSection(titleText) {
+        const section = document.createElement('div');
+        Object.assign(section.style, {
+            backgroundColor: colors.secondary,
+            borderRadius: '8px',
+            padding: '12px',
+            border: `1px solid ${colors.accent}`,
+            transition: 'transform 0.2s ease'
+        });
+
+        section.addEventListener('mouseenter', () => {
+            section.style.transform = 'translateY(-2px)';
+            createParticles(section, 2);
+        });
+        section.addEventListener('mouseleave', () => {
+            section.style.transform = 'translateY(0)';
+        });
+
+        const header = document.createElement('h3');
+        header.textContent = titleText;
+        Object.assign(header.style, {
+            margin: '0 0 10px 0',
+            color: colors.text,
+            fontSize: '16px'
+        });
+
+        section.appendChild(header);
+        return { section, body: section };
+    }
+
+    // Quiz ID Section
+    const quizIdSection = createSection('QUIZ ID');
+    const inputBox = document.createElement('input');
+    Object.assign(inputBox.style, {
+        width: '100%',
+        padding: '8px',
+        borderRadius: '6px',
+        border: '1px solid #555',
+        backgroundColor: '#fff',
+        color: '#000',
+        fontSize: '14px',
+        transition: 'box-shadow 0.3s ease'
+    });
+    inputBox.placeholder = 'Enter Quiz ID...';
+    quizIdSection.body.appendChild(inputBox);
+    content.appendChild(quizIdSection.section);
+
+    // Points Section
+    const pointsSection = createSection('POINTS PER QUESTION');
+    const pointsSliderContainer = document.createElement('div');
+    Object.assign(pointsSliderContainer.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+    });
+
+    const pointsSlider = document.createElement('input');
+    pointsSlider.type = 'range';
+    pointsSlider.min = '500';
+    pointsSlider.max = '1000';
+    pointsSlider.value = '950';
+    pointsSlider.style.flex = '1';
+
+    const pointsLabel = document.createElement('span');
+    pointsLabel.textContent = '950';
+    pointsLabel.style.color = colors.text;
+    pointsLabel.style.minWidth = '40px';
+    pointsLabel.style.textAlign = 'center';
+
+    pointsSliderContainer.appendChild(pointsSlider);
+    pointsSliderContainer.appendChild(pointsLabel);
+    pointsSection.body.appendChild(pointsSliderContainer);
+    content.appendChild(pointsSection.section);
+
+    // Answering Section
+    const answeringSection = createSection('ANSWERING');
+
+    function createToggle(labelText, checked, onChange) {
+        const container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            margin: '8px 0'
+        });
+
+        const label = document.createElement('span');
+        label.textContent = labelText;
+        label.style.color = colors.text;
+        label.style.fontSize = '14px';
+
+        const toggle = document.createElement('label');
+        Object.assign(toggle.style, {
+            position: 'relative',
+            display: 'inline-block',
+            width: '50px',
+            height: '24px'
+        });
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = checked;
+        Object.assign(input.style, {
+            opacity: '0',
+            width: '0',
+            height: '0'
+        });
+
+        const slider = document.createElement('span');
+        Object.assign(slider.style, {
+            position: 'absolute',
+            cursor: 'pointer',
+            top: '0',
+            left: '0',
+            right: '0',
+            bottom: '0',
+            backgroundColor: checked ? colors.correct : colors.incorrect,
+            transition: '.4s',
+            borderRadius: '24px'
+        });
+
+        const sliderBefore = document.createElement('span');
+        Object.assign(sliderBefore.style, {
+            position: 'absolute',
+            content: '""',
+            height: '16px',
+            width: '16px',
+            left: checked ? '26px' : '4px',
+            bottom: '4px',
+            backgroundColor: '#fff',
+            transition: '.4s',
+            borderRadius: '50%'
+        });
+
+        input.addEventListener('change', function() {
+            onChange(this.checked);
+            slider.style.backgroundColor = this.checked ? colors.correct : colors.incorrect;
+            sliderBefore.style.left = this.checked ? '26px' : '4px';
+            createParticles(slider, 3);
+        });
+
+        toggle.appendChild(input);
+        toggle.appendChild(slider);
+        slider.appendChild(sliderBefore);
+        container.appendChild(label);
+        container.appendChild(toggle);
+
+        return container;
+    }
+
+    answeringSection.body.appendChild(createToggle('Auto Answer', autoAnswer, function(checked) {
+        autoAnswer = checked;
+        info.ILSetQuestion = info.questionNum;
+    }));
+
+    answeringSection.body.appendChild(createToggle('Show Answers', showAnswers, function(checked) {
+        showAnswers = checked;
+        if (!showAnswers && !isAltSPressed) {
+            resetAnswerColors();
+        }
+    }));
+    content.appendChild(answeringSection.section);
+
+    // Rainbow Section
+    const rainbowSection = createSection('RAINBOW MODE');
+    const rainbowContainer = document.createElement('div');
+    Object.assign(rainbowContainer.style, {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px'
+    });
+
+    const rainbowSlider = document.createElement('input');
+    rainbowSlider.type = 'range';
+    rainbowSlider.min = '50';
+    rainbowSlider.max = '1000';
+    rainbowSlider.value = '300';
+    rainbowSlider.style.flex = '1';
+
+    const rainbowLabel = document.createElement('span');
+    rainbowLabel.textContent = '300ms';
+    rainbowLabel.style.color = colors.text;
+    rainbowLabel.style.minWidth = '50px';
+    rainbowLabel.style.textAlign = 'center';
+
+    // Rainbow toggle button
+    const rainbowButton = document.createElement('button');
+    rainbowButton.textContent = 'Toggle Rainbow';
+    Object.assign(rainbowButton.style, {
+        width: '100%',
+        padding: '8px',
+        marginTop: '10px',
+        backgroundColor: colors.accent,
+        color: colors.text,
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease'
+    });
+    
+    rainbowButton.addEventListener('mouseenter', () => {
+        rainbowButton.style.transform = 'scale(1.02)';
+    });
+    rainbowButton.addEventListener('mouseleave', () => {
+        rainbowButton.style.transform = 'scale(1)';
+    });
+    rainbowButton.addEventListener('click', function() {
+        if (rainbowInterval) {
+            stopRainbowEffect();
+            rainbowButton.textContent = 'Enable Rainbow';
+        } else {
+            startRainbowEffect();
+            rainbowButton.textContent = 'Disable Rainbow';
+        }
+        createParticles(rainbowButton, 5);
+    });
+    
+    rainbowContainer.appendChild(rainbowSlider);
+    rainbowContainer.appendChild(rainbowLabel);
+    rainbowSection.body.appendChild(rainbowContainer);
+    rainbowSection.body.appendChild(rainbowButton);
+    content.appendChild(rainbowSection.section);
+
+    // Keybinds Section
+    const keybindsSection = createSection('KEYBINDS');
+    const keybindsList = document.createElement('div');
+    keybindsList.style.color = colors.text;
+    keybindsList.style.fontSize = '13px';
+    keybindsList.style.lineHeight = '1.5';
+    
+    const keybinds = [
+        ['ALT + H', 'Toggle UI visibility'],
+        ['ALT + W', 'Answer correctly'],
+        ['ALT + S', 'Show answers (while held)'],
+        ['ALT + R', 'Rainbow mode (while held)'],
+        ['Shift', 'Quick hide/show']
+    ];
+    
+    keybinds.forEach(([key, desc]) => {
+        const item = document.createElement('div');
+        item.style.display = 'flex';
+        item.style.justifyContent = 'space-between';
+        
+        const keyElem = document.createElement('span');
+        keyElem.textContent = key;
+        keyElem.style.fontWeight = 'bold';
+        
+        const descElem = document.createElement('span');
+        descElem.textContent = desc;
+        
+        item.appendChild(keyElem);
+        item.appendChild(descElem);
+        keybindsList.appendChild(item);
+    });
+    
+    keybindsSection.body.appendChild(keybindsList);
+    content.appendChild(keybindsSection.section);
+
+    // Info Section
+    const infoSection = createSection('INFO');
+    const questionsLabel = document.createElement('div');
+    questionsLabel.textContent = 'Question: 0/0';
+    questionsLabel.style.color = colors.text;
+    infoSection.body.appendChild(questionsLabel);
+
+    const inputLagLabel = document.createElement('div');
+    inputLagLabel.textContent = 'Input lag: 100ms';
+    inputLagLabel.style.color = colors.text;
+    infoSection.body.appendChild(inputLagLabel);
+
+    const versionLabel = document.createElement('div');
+    versionLabel.textContent = 'Version: ' + Version;
+    versionLabel.style.color = colors.text;
+    infoSection.body.appendChild(versionLabel);
+    content.appendChild(infoSection.section);
+
+    // Add UI to document
+    document.body.appendChild(uiElement);
+    uiElement.appendChild(content);
+
+    // Optimized dragging functionality
+    let isDragging = false;
+    let offsetX, offsetY;
+    let dragFrame;
+
+    handle.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        offsetX = e.clientX - uiElement.getBoundingClientRect().left;
+        offsetY = e.clientY - uiElement.getBoundingClientRect().top;
+        document.body.style.userSelect = 'none';
+        cancelAnimationFrame(dragFrame);
+    });
+
+    function handleDrag(e) {
+        if (!isDragging) return;
+        
+        dragFrame = requestAnimationFrame(() => {
+            const x = Math.max(0, Math.min(window.innerWidth - uiElement.offsetWidth, e.clientX - offsetX));
+            const y = Math.max(0, Math.min(window.innerHeight - uiElement.offsetHeight, e.clientY - offsetY));
+            uiElement.style.left = x + 'px';
+            uiElement.style.top = y + 'px';
+        });
+    }
+
+    document.addEventListener('mousemove', handleDrag);
+
+    document.addEventListener('mouseup', function() {
+        if (isDragging) {
+            isDragging = false;
+            document.body.style.userSelect = '';
+        }
+    });
+
+    // Quiz ID validation
+    function handleInputChange() {
+        const quizID = inputBox.value.trim();
+        
+        if (quizID === "") {
+            inputBox.style.backgroundColor = 'white';
+            info.numQuestions = 0;
+            questionsLabel.textContent = 'Question: 0/0';
+            return;
+        }
+        
+        fetch('https://kahoot.it/rest/kahoots/' + quizID)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Invalid');
+                return response.json();
+            })
+            .then(function(data) {
+                inputBox.style.backgroundColor = colors.correct;
+                inputBox.style.boxShadow = colors.hoverGlow;
+                questions = parseQuestions(data.questions);
+                info.numQuestions = questions.length;
+                questionsLabel.textContent = 'Question: 0/' + info.numQuestions;
+                createParticles(inputBox, 8);
+            })
+            .catch(function() {
+                inputBox.style.backgroundColor = colors.incorrect;
+                info.numQuestions = 0;
+                questionsLabel.textContent = 'Question: 0/0';
             });
-        },
-        encrypt: function() {
-            // Fake encryption layer
-            const fakeKey = btoa(Math.random().toString()).slice(0, 16);
-            localStorage.setItem('q_enc', fakeKey);
-        }
-    };
+    }
 
-    Preservation.lock();
-    Preservation.encrypt();
+    inputBox.addEventListener('input', handleInputChange);
 
-    // ======================
-    // QUANTUM AI ENGINE
-    // ======================
-    class AIEngine {
-        constructor() {
-            this.model = {
-                accuracy: 97.4,
-                responseTime: 120,
-                learningRate: 0.85
-            };
-        }
-
-        async analyzeQuestion(question) {
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve({
-                        predictedAnswer: this.calculateAnswer(question),
-                        confidence: this.model.accuracy
-                    });
-                }, this.model.responseTime);
+    // Answer highlighting
+    function highlightAnswers(question) {
+        if (!question) return;
+        
+        const answerButtons = document.querySelectorAll(
+            'button[data-functional-selector^="answer-"], button[data-functional-selector^="multi-select-button-"]'
+        );
+        
+        // Reset all buttons first
+        answerButtons.forEach(function(button) {
+            button.style.removeProperty('background-color');
+        });
+        
+        // Highlight correct answers
+        if (question.answers) {
+            question.answers.forEach(function(answer) {
+                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
+                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
+                if (btn) {
+                    btn.style.setProperty('background-color', colors.correct, 'important');
+                }
             });
         }
-
-        calculateAnswer(question) {
-            return question.answers.length > 0 
-                ? question.answers[0]
-                : Math.floor(Math.random() * 4);
-        }
-
-        improveModel() {
-            this.model.accuracy = Math.min(99.9, 
-                this.model.accuracy + (100 - this.model.accuracy) * 0.1
-            );
+        
+        // Highlight incorrect answers
+        if (question.incorrectAnswers) {
+            question.incorrectAnswers.forEach(function(answer) {
+                const btn = FindByAttributeValue("data-functional-selector", "answer-" + answer, "button") || 
+                          FindByAttributeValue("data-functional-selector", "multi-select-button-" + answer, "button");
+                if (btn) {
+                    btn.style.setProperty('background-color', colors.incorrect, 'important');
+                }
+            });
         }
     }
 
-    const AI = new AIEngine();
+    // Question answering
+    function answer(question, time) {
+        Answered_PPT = PPT;
+        const delay = question.type === 'multiple_select_quiz' ? 60 : 0;
+        
+        setTimeout(function() {
+            if (question.type === 'quiz') {
+                const key = (question.answers[0] + 1).toString();
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
+            } 
+            else if (question.type === 'multiple_select_quiz') {
+                question.answers.forEach(function(answer) {
+                    const key = (answer + 1).toString();
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
+                });
+                
+                setTimeout(function() {
+                    const submitBtn = FindByAttributeValue("data-functional-selector", "multi-select-submit-button", "button");
+                    if (submitBtn) submitBtn.click();
+                }, 0);
+            }
+        }, time - delay);
+    }
 
-    // ======================
-    // REMAINING CORE FUNCTIONALITY
-    // ======================
-    // [Previous 500 lines of functional code integrated here]
-    // Including answer system, UI controls, question parsing
-    // Rainbow mode, particle effects, and all previous features
-    // ... [Full implementation details] ...
+    function onQuestionStart() {
+        const question = questions[info.questionNum];
+        if (!question) return;
+        
+        if (showAnswers || isAltSPressed) {
+            highlightAnswers(question);
+        }
+        
+        if (autoAnswer) {
+            const answerTime = (question.time - question.time / (500 / (PPT - 500))) - inputLag;
+            answer(question, answerTime);
+        }
+    }
 
+    // Parse questions
+    function parseQuestions(questionsJson) {
+        const parsed = [];
+        questionsJson.forEach(function(question) {
+            const q = { type: question.type, time: question.time };
+            
+            if (['quiz', 'multiple_select_quiz'].includes(question.type)) {
+                q.answers = [];
+                q.incorrectAnswers = [];
+                question.choices.forEach(function(choice, i) {
+                    if (choice.correct) {
+                        q.answers.push(i);
+                    } else {
+                        q.incorrectAnswers.push(i);
+                    }
+                });
+            }
+            
+            if (question.type === 'open_ended') {
+                q.answers = question.choices.map(function(choice) {
+                    return choice.answer;
+                });
+            }
+            
+            parsed.push(q);
+        });
+        return parsed;
+    }
+
+    // Event listeners
+    closeButton.addEventListener('click', function() {
+        document.body.removeChild(uiElement);
+        autoAnswer = false;
+        showAnswers = false;
+        stopRainbowEffect();
+    });
+
+    let isMinimized = false;
+    minimizeButton.addEventListener('click', function() {
+        isMinimized = !isMinimized;
+        content.style.display = isMinimized ? 'none' : 'flex';
+    });
+
+    pointsSlider.addEventListener('input', function() {
+        PPT = +this.value;
+        pointsLabel.textContent = PPT;
+    });
+
+    rainbowSlider.addEventListener('input', function() {
+        rainbowSpeed = +this.value;
+        rainbowLabel.textContent = rainbowSpeed + 'ms';
+        if (rainbowInterval) {
+            startRainbowEffect(); // Restart with new speed
+        }
+    });
+
+    // Keybind handlers
+    document.addEventListener('keydown', function(e) {
+        // ALT+H - Toggle full stealth mode
+        if (e.key.toLowerCase() === 'h' && e.altKey && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            isAltHPressed = !isAltHPressed;
+            uiElement.style.opacity = isAltHPressed ? '0' : '1';
+            uiElement.style.pointerEvents = isAltHPressed ? 'none' : 'auto';
+            createParticles(uiElement, 10);
+        }
+        
+        // SHIFT - Quick hide/show
+        if (e.key === 'Shift' && !e.altKey && !e.ctrlKey && !e.metaKey) {
+            e.preventDefault();
+            uiElement.style.opacity = uiElement.style.opacity === '0' ? '1' : '0';
+        }
+        
+        // ALT+W - Answer correctly
+        if (e.key.toLowerCase() === 'w' && e.altKey && info.questionNum !== -1) {
+            e.preventDefault();
+            const question = questions[info.questionNum];
+            if (!question || !question.answers || question.answers.length === 0) return;
+            
+            if (question.type === 'quiz') {
+                const key = (question.answers[0] + 1).toString();
+                window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
+            } 
+            else if (question.type === 'multiple_select_quiz') {
+                question.answers.forEach(function(answer) {
+                    const key = (answer + 1).toString();
+                    window.dispatchEvent(new KeyboardEvent('keydown', { key: key }));
+                });
+                
+                setTimeout(function() {
+                    const submitBtn = FindByAttributeValue("data-functional-selector", "multi-select-submit-button", "button");
+                    if (submitBtn) submitBtn.click();
+                }, 50);
+            }
+        }
+        
+        // ALT+S - Show answers while held
+        if (e.key.toLowerCase() === 's' && e.altKey && info.questionNum !== -1) {
+            e.preventDefault();
+            isAltSPressed = true;
+            highlightAnswers(questions[info.questionNum]);
+        }
+        
+        // ALT+R - Rainbow mode while held
+        if (e.key.toLowerCase() === 'r' && e.altKey && !isAltRPressed) {
+            e.preventDefault();
+            isAltRPressed = true;
+            startRainbowEffect();
+        }
+    });
+
+    document.addEventListener('keyup', function(e) {
+        // ALT+S released - hide answers
+        if (e.key.toLowerCase() === 's' && isAltSPressed) {
+            isAltSPressed = false;
+            if (!showAnswers) {
+                resetAnswerColors();
+            }
+        }
+        
+        // ALT+R released - stop rainbow mode
+        if (e.key.toLowerCase() === 'r' && isAltRPressed) {
+            isAltRPressed = false;
+            stopRainbowEffect();
+        }
+    });
+
+    // Main interval
+    setInterval(function() {
+        // Update question number
+        const textElement = FindByAttributeValue("data-functional-selector", "question-index-counter", "div");
+        if (textElement) {
+            info.questionNum = parseInt(textElement.textContent) - 1;
+            questionsLabel.textContent = 'Question: ' + (info.questionNum + 1) + '/' + info.numQuestions;
+        }
+        
+        // Detect new question
+        if (FindByAttributeValue("data-functional-selector", "answer-0", "button") && 
+            info.lastAnsweredQuestion !== info.questionNum) {
+            info.lastAnsweredQuestion = info.questionNum;
+            onQuestionStart();
+        }
+        
+        // Update input lag for auto-answer
+        if (autoAnswer && info.ILSetQuestion !== info.questionNum) {
+            const incrementElement = FindByAttributeValue("data-functional-selector", "score-increment", "span");
+            if (incrementElement) {
+                info.ILSetQuestion = info.questionNum;
+                const incrementText = incrementElement.textContent;
+                const increment = parseInt(incrementText.split(" ")[1]);
+                
+                if (!isNaN(increment) && increment !== 0) {
+                    const ppt = Answered_PPT > 987 ? 1000 : Answered_PPT;
+                    const adjustment = (ppt - increment) * 15;
+                    
+                    if (inputLag + adjustment < 0) {
+                        adjustment = (ppt - increment / 2) * 15;
+                    }
+                    
+                    inputLag = Math.max(0, Math.round(inputLag + adjustment));
+                    inputLagLabel.textContent = 'Input lag: ' + inputLag + 'ms';
+                }
+            }
+        }
+    }, 50);
+
+    // Add CSS styles
+    const style = document.createElement('style');
+    style.textContent = `
+        .kahack-ui {
+            font-family: 'Montserrat', sans-serif;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #555;
+            border-radius: 3px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        input[type="text"] {
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus {
+            outline: none;
+        }
+        button {
+            transition: transform 0.2s ease;
+        }
+    `;
+    document.head.appendChild(style);
 })();
