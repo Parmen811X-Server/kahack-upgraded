@@ -46,7 +46,32 @@
         rainbow: ['#ff0080', '#ff00ff', '#8000ff', '#0033ff', '#00ffff', '#00ff80', '#80ff00'],
         particleColors: ['#00ffff', '#ff00ff', '#ffff00']
     };
+// Add this function BEFORE it's used in the code
+function createSection(titleText) {
+    const section = document.createElement('div');
+    Object.assign(section.style, {
+        backgroundColor: colors.secondary,
+        borderRadius: '8px',
+        padding: '12px',
+        border: `1px solid ${colors.accent}`,
+        transition: 'transform 0.2s ease'
+    });
 
+    const header = document.createElement('h3');
+    header.textContent = titleText;
+    Object.assign(header.style, {
+        margin: '0 0 10px 0',
+        color: colors.text,
+        fontSize: '16px'
+    });
+
+    section.appendChild(header);
+    return { section, body: section };
+}
+
+// Then proceed with creating the UI sections
+const detectionSection = createSection('LIVE DETECTION');
+// ... rest of your UI code ...
     // Helper functions
     function createParticles(element, count = 5) {
         // Keep existing particle implementation
